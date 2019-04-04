@@ -1,0 +1,210 @@
+---
+title: "Github_Puerto Rico 2019 Soil and Root Analyses by Depth"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+  pdf_document:
+    toc: yes
+  fig_caption: yes
+  tab_caption: yes
+---
+
+# Introduction:
+The current model includes roots and 10 soil layers (as defined by hydrological models ) up to 3 m. However, the behavior of roots within those layers and how they regulate P acquisition is not well constrained. One study found (citation?) that root phosphatase decreased with depth but actually increased by depth when root phosphatase is expressed per root length. Measuring root physical and physiological traits along a defined soil profile will enable a more complete understanding of root interactions with soil phosphorus availability across depths, providing data needed to parameterize the phosphorus model.  
+
+# Sample collection details
+On February 22nd - February 24th, we collected three soil cores per site up to a meter for soil phosphatase and bulk density. Soil phosphatase cores will also be processed for resin P and root biomass. Bulk density samples will also be processed for total P and organic P. We collected soil phosphatase cores using a 30 cm split core with a hammer and collected bulk density cores using a kit. We also collected a 30 cm core for paired root and soil phosphatase. 
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r Packages}
+library(tidyverse)
+library(car)
+library(reshape2)
+library(plotrix)
+library(captioner)
+library(knitr)
+```
+
+```{r setup}
+
+fig_nums <- captioner(prefix = "Fig.")
+fig.1_cap <- fig_nums(name = "fig_1",
+                      caption = "Soil Phosphatase Boxplot by Depth")
+fig.2_cap <- fig_nums(name = "fig.2",
+                      caption = "Mean Soil Phosphatase by Depth")
+fig.3_cap <- fig_nums(name = "fig_3",
+                      caption = "Combined Icacos plot")
+fig.4_cap <- fig_nums(name = "fig.4",
+                      caption = "Root and Soil Phosphatase from 0-30cm")
+fig.5_cap <- fig_nums(name = "fig.5",
+                      caption = "Mean Root and Soil Phosphatase 0-30cm")
+
+table_nums <- captioner(prefix = "Tab.")
+tab.1_cap <- table_nums(name = "tab_1",
+                      caption = "Soil Phosphatase Summary Statistics")
+tab.2_cap <- table_nums(name = "tab_2",
+                        caption = "Soil Phosphatase ANOVA")
+tab.3_cap <- table_nums(name = "tab_3",
+                        caption = "Paired Root and Soil Phosphatase Means")
+tab.4_cap <- table_nums(name = "tab_4",
+                        caption = "Root and Soil Phosphatase ANOVA ")
+```
+
+# Soil Phosphatase
+```{r Data Import}
+soilpase <- read.csv("~/Documents/LabStats/PR2019/SoilPase.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+```
+
+```{r Figure 1, fig.cap=fig.1_cap}
+ggplot(data = soilpase, aes(x = Depth, y = Pase)) + geom_boxplot() + geom_point() + 
+  facet_grid(. ~ Site) + scale_x_discrete(limits=c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
+        axis.title.x = element_blank()) +
+  ylab(expression(Soil~Phosphatase~(mu~pNP~g^{-1})))
+```
+
+## Summary Statistics
+```{r Mean, SD, SE}
+# Mean, SD, SE
+soilpase.sum <- soilpase %>% 
+  group_by(Site, Depth) %>% 
+  summarise(n = n(),
+            mean = mean(Pase, na.rm = TRUE),
+            sd = sd(Pase, na.rm = TRUE),
+            se = ((sd(Pase, na.rm = TRUE))/sqrt(n())))
+```
+
+```{r Table 1, fig.cap=tab.1_cap}
+soilpase.sum
+```
+
+```{r Figure 2, fig.cap=fig.2_cap}
+ggplot(data = soilpase.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width = 0.2) +
+  facet_grid(. ~ Site) +
+  coord_flip() +
+  scale_x_discrete(limits = rev(c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm"))) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  ylab(expression(Mean~Soil~Phosphatase~(mu~pNP~g^{-1})))
+```
+
+
+## ANOVA
+```{r Table 2, fig.cap=tab.2_cap}
+pase.rank <- rank(soilpase$Pase)
+soilpase <- cbind(soilpase, pase.rank)
+
+soilpase.aov <- aov(pase.rank ~ Site + Depth + Site:Depth, data = soilpase)
+summary(soilpase.aov)
+```
+
+## Combined Icacos Plot
+```{r Figure 3, fig.cap=fig.3_cap}
+soilpase.mod <- read.csv("~/Documents/LabStats/PR2019/PR2019_PaseMod.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+
+pase.mod.sum <- soilpase.mod %>% 
+  group_by(Site, Depth) %>% 
+  summarise(n = n(),
+            mean = mean(Pase, na.rm = TRUE),
+            sd = sd(Pase, na.rm = TRUE),
+            se = ((sd(Pase, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = pase.mod.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2) + coord_flip() + 
+  facet_grid(. ~ Site) + 
+  scale_x_discrete(limits = rev(c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm"))) +
+  theme_bw() + theme(panel.grid = element_blank(),
+                     axis.title.y = element_blank()) +  ylab(expression(Mean~Soil~Phosphatase~(mu~mol~pNP~g^{-1})))
+```
+
+# Paired Root and Soil Phosphatase
+```{r Data Import Paired}
+pairedpase <- read.csv("~/Documents/LabStats/PR2019/PR2019_ShortCore.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+```
+
+```{r Figure 4, fig.cap=fig.4_cap}
+ggplot(data = pairedpase, aes(x = Site, y = Pase, fill = Depth)) + geom_boxplot() + 
+  facet_grid(. ~ Pase_Type) + 
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = "black")) +
+  scale_fill_brewer(palette = "Set2") + ylab(expression(Phosphatase~(mu~mol~pNP~g^{-1})))
+```
+
+```{r Table 3, fig.cap=tab.3_cap}
+pairedpase.sum <- pairedpase %>% 
+  group_by(Site, Pase_Type, Depth) %>% 
+  summarise(n = n(),
+            mean = mean(Pase, na.rm = TRUE),
+            sd = sd(Pase, na.rm = TRUE),
+            se = ((sd(Pase, na.rm = TRUE))/sqrt(n())))
+pairedpase.sum
+```
+
+```{r Figure 5, fig.cap=fig.5_cap}
+ggplot(data = pairedpase.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identity") + facet_grid(. ~ Site) + geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width = 0.2) + 
+  scale_x_discrete(limits=rev(c("0-10cm", "10-20cm", "20-30cm"))) + 
+  scale_y_continuous(limits = c(0,15), breaks = c(0, 5, 10, 15)) + coord_flip() + 
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  xlab("Soil Depth (cm)") + ylab(expression(Mean~Soil~Phosphatase~(mu~mol~pNP~(g^{-1}))))
+```
+
+## Two-way repeated measures MANOVA
+```{r Table 4, fig.cap=tab.4_cap}
+
+# setting up dataframe
+pairedpase.manova <- pairedpase %>% 
+  select(Site, Depth, Pase_Type, Pase) %>% 
+  melt(id = c("Site", "Depth", "Pase_Type"))
+pairedpase.manova$ID <- seq.int(nrow(pairedpase))
+
+# rank transforming data
+pase.rank <- rank(pairedpase.manova$value)
+pairedpase.manova <- cbind(pairedpase.manova, pase.rank)
+
+# establishing factors
+pairedpase.manova <- within(pairedpase.manova, {
+  Site <- factor(Site)
+  Depth <- factor(Depth)
+  Pase_Type <- factor(Pase_Type)
+})
+
+# ANOVA
+pairedmanova.aov <- with(pairedpase.manova,
+               aov(pase.rank ~ Pase_Type*Site*Depth + Error(ID / (Site*Depth))))
+summary(pairedmanova.aov)
+```
+
+# Resin P
+```{r Data Import}
+resinp <- read.csv("~/Documents/LabStats/PR2019/PR2019_ResinP.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+
+# removing blanks
+resinp.blanks <- resinp %>% 
+  filter(grepl('Blank', SampleID))
+
+resinp <- resinp %>% 
+  filter(!grepl('Blank', SampleID))
+```
+
+## ANOVA
+```{r}
+resinp.aov <- aov(ResinP ~ Site*Depth, data = resinp)
+summary(resinp.aov)
+```
+
+
