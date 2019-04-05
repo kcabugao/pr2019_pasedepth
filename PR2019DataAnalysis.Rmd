@@ -1,5 +1,5 @@
 ---
-title: "Github_Puerto Rico 2019 Soil and Root Analyses by Depth"
+title: "Puerto Rico 2019 Soil and Root Analyses by Depth"
 output:
   html_document:
     df_print: paged
@@ -45,6 +45,8 @@ fig.4_cap <- fig_nums(name = "fig.4",
                       caption = "Root and Soil Phosphatase from 0-30cm")
 fig.5_cap <- fig_nums(name = "fig.5",
                       caption = "Mean Root and Soil Phosphatase 0-30cm")
+fig.6_cap <- fig_nums(name = "fig.6",
+                      caption = "Phosphorus availability as measuring by resin P")
 
 table_nums <- captioner(prefix = "Tab.")
 tab.1_cap <- table_nums(name = "tab_1",
@@ -155,9 +157,8 @@ pairedpase.sum
 ```
 
 ```{r Figure 5, fig.cap=fig.5_cap}
-ggplot(data = pairedpase.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identity") + facet_grid(. ~ Site) + geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width = 0.2) + 
-  scale_x_discrete(limits=rev(c("0-10cm", "10-20cm", "20-30cm"))) + 
-  scale_y_continuous(limits = c(0,15), breaks = c(0, 5, 10, 15)) + coord_flip() + 
+ggplot(data = pairedpase.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identity") + facet_grid(Pase_Type ~ Site) + geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width = 0.2) + 
+  scale_x_discrete(limits=rev(c("0-10cm", "10-20cm", "20-30cm"))) + coord_flip() + 
   theme_bw() +
   theme(panel.grid = element_blank()) +
   xlab("Soil Depth (cm)") + ylab(expression(Mean~Soil~Phosphatase~(mu~mol~pNP~(g^{-1}))))
@@ -201,10 +202,32 @@ resinp <- resinp %>%
   filter(!grepl('Blank', SampleID))
 ```
 
+## Summary Statistics
+```{r Figure 6, fig.cap=fig.6_cap}
+ggplot(data = resinp, aes(x = Depth, y = ResinP)) + geom_boxplot() + facet_grid(.~Site) +
+  scale_x_discrete(limits = c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) +
+  scale_y_continuous(limits = c(0, 150), breaks = c(0, 25, 50, 75, 100, 125, 150)) +
+  theme_bw() + theme(panel.grid = element_blank(),
+                     axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
+                     axis.title.x = element_blank()) +
+  ylab(expression(Phosphorus~availability~(mu~g~L^{-1})))
+```
+
+```{r ResinP Mean, SD, SE}
+resinp.sum <- resinp %>% 
+  group_by(Site, Depth) %>% 
+  summarise(n = n(),
+            mean = mean(ResinP, na.rm = TRUE),
+            sd = sd(ResinP, na.rm = TRUE),
+            se = std.error(ResinP, na.rm = TRUE))
+resinp.sum
+```
+
 ## ANOVA
 ```{r}
 resinp.aov <- aov(ResinP ~ Site*Depth, data = resinp)
 summary(resinp.aov)
+
 ```
 
 
