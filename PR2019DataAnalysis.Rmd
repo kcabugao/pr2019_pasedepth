@@ -191,31 +191,41 @@ summary(pairedmanova.aov)
 ```
 
 # Resin P
-```{r Data Import}
-resinp <- read.csv("~/Documents/LabStats/PR2019/PR2019_ResinP.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+```{r Data Import ResinP}
+resinp <- read.csv("~/Documents/LabStats/PR2019/PR2019_resinp.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+```
 
-# removing blanks
-resinp.blanks <- resinp %>% 
-  filter(grepl('Blank', SampleID))
+## Outlier Test
+```{r Outlier}
+# outlier test: Cook's D
+mod <- lm(ResinP ~ Site, data = resinp)
+cooksd <- cooks.distance(mod)
 
+# plot Cook's D using 4/n 
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red") 
+
+# replacing 19 (EVV Location 1 0-5cm)
+library(naniar)
 resinp <- resinp %>% 
-  filter(!grepl('Blank', SampleID))
+  replace_with_na(replace = list(ResinP = 5.71))
 ```
 
 ## Summary Statistics
 ```{r Figure 6, fig.cap=fig.6_cap}
-ggplot(data = resinp, aes(x = Depth, y = ResinP)) + geom_boxplot() + facet_grid(.~Site) +
+ggplot(data = resinp, aes(x = SoilDepth, y = ResinP)) + geom_boxplot() + facet_grid(.~Site) +
   scale_x_discrete(limits = c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) +
-  scale_y_continuous(limits = c(0, 150), breaks = c(0, 25, 50, 75, 100, 125, 150)) +
+  scale_y_continuous(limits = c(0, 2.00)) +
   theme_bw() + theme(panel.grid = element_blank(),
                      axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
                      axis.title.x = element_blank()) +
-  ylab(expression(Phosphorus~availability~(mu~g~L^{-1})))
+  ylab(expression(Phosphorus~availability~(mu~g~P~g^{-1})))
 ```
 
 ```{r ResinP Mean, SD, SE}
 resinp.sum <- resinp %>% 
-  group_by(Site, Depth) %>% 
+  group_by(Site, SoilDepth) %>% 
   summarise(n = n(),
             mean = mean(ResinP, na.rm = TRUE),
             sd = sd(ResinP, na.rm = TRUE),
@@ -225,7 +235,7 @@ resinp.sum
 
 ## ANOVA
 ```{r}
-resinp.aov <- aov(ResinP ~ Site*Depth, data = resinp)
+resinp.aov <- aov(ResinP ~ Site*SoilDepth, data = resinp)
 summary(resinp.aov)
 
 ```
