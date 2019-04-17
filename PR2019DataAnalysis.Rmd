@@ -3,9 +3,9 @@ title: "Puerto Rico 2019 Soil and Root Analyses by Depth"
 output:
   html_document:
     df_print: paged
-    toc: yes
-    toc_float:
-      collapsed: no
+    toc: true
+    toc_float: 
+      collapsed: TRUE
       smooth_scroll: no
   pdf_document:
     toc: yes
@@ -13,11 +13,44 @@ output:
   tab_caption: yes
 ---
 
-# Introduction:
+# Introduction
 The current model includes roots and 10 soil layers (as defined by hydrological models ) up to 3 m. However, the behavior of roots within those layers and how they regulate P acquisition is not well constrained. One study found (citation?) that root phosphatase decreased with depth but actually increased by depth when root phosphatase is expressed per root length. Measuring root physical and physiological traits along a defined soil profile will enable a more complete understanding of root interactions with soil phosphorus availability across depths, providing data needed to parameterize the phosphorus model.  
 
-# Sample collection details
-On February 22nd - February 24th, we collected three soil cores per site up to a meter for soil phosphatase and bulk density. Soil phosphatase cores will also be processed for resin P and root biomass. Bulk density samples will also be processed for total P and organic P. We collected soil phosphatase cores using a 30 cm split core with a hammer and collected bulk density cores using a kit. We also collected a 30 cm core for paired root and soil phosphatase. 
+# Methods
+
+## Sample Collection and Processing
+On February 22nd - February 24th, 2019 we collected three soil cores per site up to a meter for soil phosphatase and bulk density. Soil phosphatase cores will also be processed for resin P and root biomass. Bulk density samples will also be processed for total P and organic P. We collected soil phosphatase cores using a 30 cm split core with a hammer and collected bulk density cores using a kit. We also collected a 30 cm core for paired root and soil phosphatase. 
+
+We returned 2/26/2019 and samples were to arrive on 2/27/2019. However, they arrived late on 2/28/2019.
+
+**Root and soil phosphatase: 2/28/2019 - 03/02/2019**
+
+Root and soil phosphatase was measured using a modified para-nitrophenyl phosphatase method. Approximately 0.5 g fresh wt of roots in 9 mls of 50 mM sodium acetate-acetic acid buffer was incubated for 1 hr in 200 rpm at 27 $^\circ$C. Absorbance of the solution when terminated with 0.11 M NaOH was read at 400 nm and compared to a blank. Soil phosphatase was measured in a similar process except 1.0 g fresh soil was used with modified universal buffer. In addition, soil samples were terminated with 0.5 M NaOH and 0.5 M CaCl2.
+
+**Mycorrhizae: 2/28/2019 - 03/01/2019**
+
+**Bulk density: 2/28/2019 - 03/03/2019**
+Bulk density samples were collected using a kit from AMR to ensure consistency. The diameter of each metal rings containing the soil was (**2.54 cm??**). Soil was removed from the metal rings and deposited into bulk density bags and oven dried at (110 $^\circ$C). 
+
+**Resin P: 03/01/2019 - 03/04/2019**
+Resin P was measuring using anion exchange membrane strips charged with sodium bicarbonate. Approximately 8 g fresh wt of soil and five strips were added to a sample cups with 80 mls diH2O and shaken vigorously (rpm) for 24 hours. Membrane strips were removed and washed with diH2O prior to shaking them with 50 ml of 0.25 M H2SO4 for 1 hr at lower speed. Phosphate concentration was measuring using the Lachat Quikchem.
+
+**Root picking for root biomass: 03/10/2019 - 03/26/2019**
+Roots from each depth: 0-5 cm, 7-12 cm, 12-14cm, 20-26cm, 33-47cm, and 58-88cm were picked for both transportive (> 1 mm diameter) and absorptive (< 1 mm diameter) roots.
+
+**Organic P: 4/15/2019 - 4/19/2019**
+Total soil organic phosphorus was measured using the Bowman extraction method, modified in Condron 1990. Briefly, 2 g of fresh soil was measured into a 50 ml falcon tube prior to adding 3 ml of 18 M H2SO4 added 1 ml at a time. 4 mls of diH2O was added in 1 ml increments followed by 48 mls of diH2O. Samples were vortexed in between each addition to ensure complete contact between acid, water, and soil. Samples were centrifuged then filtered. The filter was saved and added to the soil following the acid extraction for hte alkali extraction. Both the filter and the soil was shaken with 98 ml of 0.5 M NaOH for 2 hours. After centrifuging and filtering, both the acid extract and the alkali extract were read using the Lachat.
+**EVR organic P analysis needs to be redone**
+
+## Statistical analysis
+For consistency, data are rank transformed prior to using two-way ANOVAs to discern differences among sites and depth. 
+
+## To-do list
+
+- graph organic p (& resin p) x sand:silt:clay
+- combine depths to use for paired root&soil phosphatase and re-analyze
+- multifactor analysis for soil phosphatase instead of pca 
+- fix depths so that they're consistent between graphs
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
@@ -30,10 +63,10 @@ library(reshape2)
 library(plotrix)
 library(captioner)
 library(knitr)
+library(factoextra)
 ```
 
 ```{r setup}
-
 fig_nums <- captioner(prefix = "Fig.")
 fig.1_cap <- fig_nums(name = "fig_1",
                       caption = "Soil Phosphatase Boxplot by Depth")
@@ -60,6 +93,8 @@ tab.4_cap <- table_nums(name = "tab_4",
 ```
 
 # Soil Phosphatase
+Soil phosphatase decreases with depth consistently among all sites,. Contrary to our hypothesis, soil phosphatase activity in ICA-R and ICA-V were lower than El Verde sites, despite previous results indicating much lower levels of available phosphorus. Interestingly, when ICA-R and ICA-V are combined as they were in a previous study, we see the same trend, where Icacos has higher phosphatase activity than EVR and EVV. In addition, previous results have suggested that Valley sites have lower phosphatase activity, perhaps due to surface runoff of phosphorus. However, here the differences between Ridge and Valley sites are not pronounced. 
+
 ```{r Data Import}
 soilpase <- read.csv("~/Documents/LabStats/PR2019/SoilPase.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
 ```
@@ -132,8 +167,13 @@ ggplot(data = pase.mod.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identit
 ```
 
 # Paired Root and Soil Phosphatase
+Root and soil phosphatase was analyzed using a two-way repeated measures MaNOVA to determine whether phopshatase activity depended on whether it was measured from roots or soil and to discern differences in activity by site and depth. Root phosphatase and soil phosphatase, when standardized to soil volume were drastically different, with greater soil phsophatase than root phosphatase. Both differed among sites (p < 0.05), but not by depth (p = 0.98). 
+
 ```{r Data Import Paired}
 pairedpase <- read.csv("~/Documents/LabStats/PR2019/PR2019_ShortCore.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+
+paired.vol <- read.csv("~/Documents/LabStats/PR2019/PR2019_ShortCore_Final.csv", stringsAsFactors = TRUE, na.strings = "NA", header = TRUE)
+
 ```
 
 ```{r Figure 4, fig.cap=fig.4_cap}
@@ -144,6 +184,15 @@ ggplot(data = pairedpase, aes(x = Site, y = Pase, fill = Depth)) + geom_boxplot(
         legend.position = c(0.9,0.8),
         legend.background = element_rect(colour = "black")) +
   scale_fill_brewer(palette = "Set2") + ylab(expression(Phosphatase~(mu~mol~pNP~g^{-1})))
+```
+
+```{r Paired volume}
+ggplot(data = paired.vol, aes(x = Site, y = Pase_vol, fill = Depth..cm.)) + geom_boxplot() + facet_grid(. ~ Type) +  theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.position = c(0.9,0.8),
+        legend.background = element_rect(colour = "black")) +
+  scale_fill_brewer(palette = "Set2") +
+  ylab(expression(Phosphatase~(mu~mol~pNP~g^{-1})))
 ```
 
 ```{r Table 3, fig.cap=tab.3_cap}
@@ -190,7 +239,10 @@ pairedmanova.aov <- with(pairedpase.manova,
 summary(pairedmanova.aov)
 ```
 
+
 # Resin P
+An outlier test using Cooks Distance indicates that sample 19 (EVV Location 1: 0-5 cm) is a data point that significantly skews statistical models. In this case, sample 19 is 4 times the mean, suggesting that it should not be included. Phosphorus availability differed among sites (p < 0.001), but not by depth. Generally, El Verde sites contained more phosphorus than in Icacos sites and there weren't any consistent patterns of phosphorus availability by depth. 
+
 ```{r Data Import ResinP}
 resinp <- read.csv("~/Documents/LabStats/PR2019/PR2019_resinp.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
 ```
@@ -240,4 +292,154 @@ summary(resinp.aov)
 
 ```
 
+# Organic P
+Unlike resin P, there are stark differences in organic phosphorus content among the sites (p < 0.001) and depths (p < 0.01). In particular, both El Verde sites have significantly higher concentrations than in the Icacos sites. There was no significant interaction between site and depth in determining organic phosphorus, and the boxplot suggests that organic phosphorus tends to decrease until 25-30 cm before increasing slightly. 
 
+```{r Organic P Data Import}
+orgp <- read.csv("~/Documents/LabStats/PR2019/OrganicP.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+
+# total p
+orgp <- orgp %>% 
+  mutate(OrgP_Total = OrgP_Acid + OrgP_Alkali)
+```
+
+## Summary Statistics
+```{r Organic P Boxplot}
+ggplot(data = orgp, aes(x = Depth, y = OrgP_Total)) + geom_boxplot() +
+  facet_grid(.~Site) + scale_x_discrete(limits = c("0 -5 cm", "7-12 cm", "15-20 cm", "25-30 cm", "45-50 cm", "80-90 cm")) + theme_bw() + 
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
+        axis.title.x = element_blank()) +
+  ylab(expression(Total~organic~P~(mg~P~g^{-1})))
+```
+
+```{r Organic P Mean}
+orgp %>%
+  group_by(Site, Depth) %>% 
+  summarise(n = n(),
+            mean = mean(OrgP_Total, na.rm = TRUE),
+            sd = sd(OrgP_Total, na.rm = TRUE),
+            se = std.error(OrgP_Total, na.rm = TRUE))
+```
+
+## ANOVA
+```{r}
+# rank transform
+rank.optotal <- rank(orgp$OrgP_Total)
+orgp <- cbind(orgp, rank.optotal)
+
+rank.orgp.aov <- aov(rank.optotal ~ Site*Depth, data = orgp)
+summary(rank.orgp.aov) # significant
+```
+
+# Correlations
+## Resin P x Soil Phosphatase
+The relationship between resin P and soil phosphatase depends on site and depth. As depth increases, the separation among sites diminishes until after 27-32 cm where there is no differenc among sites in soil phosphtase and resin P availability. In general, the Icacos sites tend to have lower soil phosphatase and resin P availability, within each depth. Given similar levels of phosphorus, El Verde sites consistently have higher soil phosphatase activity. 
+
+```{r}
+pase.corr <- cbind(soilpase, resinp$ResinP)
+pase.corr <- pase.corr %>% 
+  select(Site, Location, Depth, Pase, 'resinp$ResinP')
+
+pase.corr$Depth = factor(pase.corr$Depth, levels = c('0-5cm', '7-12cm', '14-19cm', '27-32cm', '47-52cm', '87-92cm'))
+
+ggplot(data = pase.corr, aes(x = resinp$ResinP, y = Pase, colour = Site)) +
+  geom_point(alpha = 0.5, size=5) + facet_grid(. ~ Depth) +
+  scale_color_brewer(palette = "Set1") + theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.position = c(0.95, 0.9)) + xlab(expression(Phosphorus~availability~(mu~P~g^{-1}))) + ylab(expression(Soil~Phosphatase~(mu~pNP~g^{-1})))
+```
+
+```{r Resin P x Phosphatase volume}
+resinp.vol <- read.csv("~/Documents/LabStats/PR2019/PR2019_resinp_vol.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+pase.vol <- read.csv("~/Documents/LabStats/PR2019/PR2019_SoilPase_Final.csv", stringsAsFactors = TRUE, na.strings = "NA", header = TRUE)
+
+resinp.vol <- cbind(resinp.vol, pase.vol$SoilPase_vol)
+
+resinp.vol$SoilDepth = factor(resinp.vol$SoilDepth, levels = c('0-5cm', '7-12cm', '14-19cm', '27-32cm', '47-52cm', '87-92cm'))
+
+ggplot(data = resinp.vol, aes(x = resinp_vol, y = pase.vol$SoilPase_vol, colour = Site)) + geom_point(alpha = 0.5, size = 5) + facet_grid(. ~ SoilDepth) +
+  scale_color_brewer(palette = "Set1") + theme_bw() +
+  theme(panel.grid = element_blank(),
+        legend.position = c(0.95, 0.9)) + xlab(expression(Phosphorus~availability~(mu~P~cm^{-3}))) + ylab(expression(Soil~Phosphatase~(mu~pNP~cm^{-3})))
+```
+
+## Organic P x Resin P
+```{r}
+# cbind
+orgp <- cbind(orgp, resinp$ResinP)
+
+ggplot(data = orgp, aes(x = OrgP_Total, y = `resinp$ResinP`, colour = Site)) +
+  geom_point(alpha = 0.5, size = 4) + facet_grid(.~Depth) + theme_bw() + 
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  xlab(expression(Organic~P~(mg~P~g^{-1}))) + ylab(expression(Inorganic~P~(mu~g~P~g^{-1}))) +
+  scale_color_brewer(palette = "Set1")
+```
+
+## Organic P x Soil Phosphatase
+```{r}
+# binding soil phosphatase data 
+orgp <- cbind(orgp, soilpase$Pase)
+
+orgp$Depth = factor(orgp$Depth, levels = c("0 -5 cm", "7-12 cm", "15-20 cm", "25-30 cm", "45-50 cm", "80-90 cm"))
+
+ggplot(data = orgp, aes(x = OrgP_Total, y = `soilpase$Pase`, colour = Site)) + 
+  geom_point(alpha = 0.5, size = 4) + facet_grid(.~Depth) + theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  xlab(expression(Organic~Phosphorus~(mg~P~g^{-1}))) +
+  ylab(expression(Soil~Phosphatase~(mu~mol~pNP~g^{-1})))
+```
+
+## Root Biomass x Root Phosphatase
+```{r}
+biom.corr <- read.csv("~/Documents/LabStats/PR2019/BiomassCorrelations.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+
+ggplot(data = biom.corr, aes(x = RootBiomass, y = SoilPase_vol, colour = Site)) + geom_point(alpha = 0.5, size = 5) + facet_grid(. ~ DepthNumber) + theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  xlab(expression(Root~biomass~(g~cm^{-3}))) +
+  ylab(expression(Soil~Phosphatase~(mu~mol~pNP~g^{-3})))
+```
+
+# Principal Component Analysis
+```{r}
+pase.mat <- read.csv("~/Documents/LabStats/PR2019/Mastersheet.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+
+# fixing row names
+rownames(pase.mat) <- pase.mat[,1]
+pase.mat <- pase.mat[,-1]
+
+# matrix numeric only
+pase.active <- pase.mat %>% 
+  select(SoilPase_vol, ResinP_vol, OrganicP, RootBiomass) %>% 
+  filter(SoilPase_vol != "NA") %>% 
+  filter(ResinP_vol != "NA")
+```
+
+```{r Calculating PCA}
+res.pca <- prcomp(pase.active, scale = TRUE)
+
+# visualize eigenvalues = % of variance explained by each PC
+fviz_eig(res.pca)
+
+# show correlation between variables
+fviz_pca_var(res.pca,
+             col.var = "contrib",
+             repel = TRUE)
+```
+
+```{r PCA Qualitative}
+pase.mat <- pase.mat %>% 
+  filter(SoilPase_vol != "NA") %>% 
+  filter(ResinP_vol != "NA")
+
+groups <- as.factor(pase.mat$Site[1:68])
+fviz_pca_ind(res.pca,
+             col.ind = groups,
+             addEllipses = TRUE,
+             ellipse.type = "confidence",
+             legend.title = "Site",
+             repel = TRUE)
+```
