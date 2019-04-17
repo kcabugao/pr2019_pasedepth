@@ -1,14 +1,14 @@
 ---
 title: "Puerto Rico 2019 Soil and Root Analyses by Depth"
 output:
+  pdf_document:
+    toc: yes
   html_document:
     df_print: paged
     toc: true
     toc_float: 
       collapsed: TRUE
       smooth_scroll: no
-  pdf_document:
-    toc: yes
   fig_caption: yes
   tab_caption: yes
 ---
@@ -378,6 +378,8 @@ ggplot(data = orgp, aes(x = OrgP_Total, y = `resinp$ResinP`, colour = Site)) +
 ```
 
 ## Organic P x Soil Phosphatase
+The relationship between organic P and soil phosphatase mirrors that of resin P, where soil phosphatase and organic phosphorus consistently decline with depth and the differences between sites disappear after 25-30 cm in depth. For a given organic phosphorus concentration, there is generally higher soil phosphatase in El Verde Ridge. El Verde Valley and Icacos Ridge appear to have similar soil phosphatase activity, despite Icacos Ridge having consistently lower amounts of organic phosphorus. Icacos Valley tends to have both lower organic phosphorus content and soil phosphtatase. 
+
 ```{r}
 # binding soil phosphatase data 
 orgp <- cbind(orgp, soilpase$Pase)
@@ -393,6 +395,11 @@ ggplot(data = orgp, aes(x = OrgP_Total, y = `soilpase$Pase`, colour = Site)) +
 ```
 
 ## Root Biomass x Root Phosphatase
+As expected, root biomass decreass with depth. Root biomass does not appear ot differ significantly among sites, consistently remaing within 0.001 g/cm3 - 0.002 g/cm3. However, soil phosphatase varies among sites, where despite similar amounts of root biomass;  El Verde Ridge is highest in soil phosphatase activity, followed by El Verde Valley and Icacos Ridge, with Icacos Valley having the lowest amounts. 
+
+
+**Need to remove 5-7 cm depth (facet #2)**
+
 ```{r}
 biom.corr <- read.csv("~/Documents/LabStats/PR2019/BiomassCorrelations.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
 
@@ -404,6 +411,7 @@ ggplot(data = biom.corr, aes(x = RootBiomass, y = SoilPase_vol, colour = Site)) 
 ```
 
 # Principal Component Analysis
+
 ```{r}
 pase.mat <- read.csv("~/Documents/LabStats/PR2019/Mastersheet.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
 
