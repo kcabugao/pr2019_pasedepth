@@ -96,12 +96,12 @@ tab.4_cap <- table_nums(name = "tab_4",
 Soil phosphatase decreases with depth consistently among all sites,. Contrary to our hypothesis, soil phosphatase activity in ICA-R and ICA-V were lower than El Verde sites, despite previous results indicating much lower levels of available phosphorus. Interestingly, when ICA-R and ICA-V are combined as they were in a previous study, we see the same trend, where Icacos has higher phosphatase activity than EVR and EVV. In addition, previous results have suggested that Valley sites have lower phosphatase activity, perhaps due to surface runoff of phosphorus. However, here the differences between Ridge and Valley sites are not pronounced. 
 
 ```{r Data Import}
-soilpase <- read.csv("~/Documents/LabStats/PR2019/SoilPase.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+soilpase <- read.csv("~/Documents/Stats/PR2019/SoilPase.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+View(soilpase)
 ```
 
 ```{r Figure 1, fig.cap=fig.1_cap}
-ggplot(data = soilpase, aes(x = Depth, y = Pase)) + geom_boxplot() + geom_point() + 
-  facet_grid(. ~ Site) + scale_x_discrete(limits=c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) + 
+ggplot(data = soilpase, aes(x = Depth, y = SoilPase, fill = Site)) + geom_boxplot() + scale_x_discrete(limits=c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) + 
   theme_bw() + 
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -116,9 +116,27 @@ ggplot(data = soilpase, aes(x = Depth, y = Pase)) + geom_boxplot() + geom_point(
 soilpase.sum <- soilpase %>% 
   group_by(Site, Depth) %>% 
   summarise(n = n(),
-            mean = mean(Pase, na.rm = TRUE),
-            sd = sd(Pase, na.rm = TRUE),
-            se = ((sd(Pase, na.rm = TRUE))/sqrt(n())))
+            mean = mean(SoilPase, na.rm = TRUE),
+            sd = sd(SoilPase, na.rm = TRUE),
+            se = ((sd(SoilPase, na.rm = TRUE))/sqrt(n())))
+View(soilpase.sum)
+
+soilpase_meanline <- ggplot(data = soilpase.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_point(size = 4, alpha = 0.5) +
+  geom_line(na.rm = FALSE) +
+  scale_x_discrete(limits = c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) +
+  scale_colour_brewer(palette = "Set2") + 
+  theme_bw() + 
+  theme(panel.grid = element_blank(),
+        legend.position = c(0.85, 0.8),
+        axis.title.x = element_blank()) +
+  ylab(expression(Mean~soil~phosphatase~(mu~mol~pNP~gsoil^{-1})))
+
+pdf("soilpase_meanline.pdf")
+plot(soilpase_meanline)
+dev.off()
+  
+  
 ```
 
 ```{r Table 1, fig.cap=tab.1_cap}
@@ -140,7 +158,7 @@ ggplot(data = soilpase.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identit
 
 ## ANOVA
 ```{r Table 2, fig.cap=tab.2_cap}
-pase.rank <- rank(soilpase$Pase)
+pase.rank <- rank(soilpase$SoilPase)
 soilpase <- cbind(soilpase, pase.rank)
 
 soilpase.aov <- aov(pase.rank ~ Site + Depth + Site:Depth, data = soilpase)
@@ -170,9 +188,10 @@ ggplot(data = pase.mod.sum, aes(x = Depth, y = mean)) + geom_bar(stat = "identit
 Root and soil phosphatase was analyzed using a two-way repeated measures MaNOVA to determine whether phopshatase activity depended on whether it was measured from roots or soil and to discern differences in activity by site and depth. Root phosphatase and soil phosphatase, when standardized to soil volume were drastically different, with greater soil phsophatase than root phosphatase. Both differed among sites (p < 0.05), but not by depth (p = 0.98). 
 
 ```{r Data Import Paired}
-pairedpase <- read.csv("~/Documents/LabStats/PR2019/PR2019_ShortCore.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+pairedpase <- read.csv("~/Documents/Stats/PR2019/PR2019_ShortCore.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
 
-paired.vol <- read.csv("~/Documents/LabStats/PR2019/PR2019_ShortCore_Final.csv", stringsAsFactors = TRUE, na.strings = "NA", header = TRUE)
+paired.vol <- read.csv("~/Documents/Stats/PR2019/PR2019_ShortCore_Final.csv", stringsAsFactors = TRUE, na.strings = "NA", header = TRUE)
+View(paired.vol)
 
 ```
 
@@ -184,6 +203,25 @@ ggplot(data = pairedpase, aes(x = Site, y = Pase, fill = Depth)) + geom_boxplot(
         legend.position = c(0.9,0.8),
         legend.background = element_rect(colour = "black")) +
   scale_fill_brewer(palette = "Set2") + ylab(expression(Phosphatase~(mu~mol~pNP~g^{-1})))
+
+# soil paired phosphatase
+View(paired.soil)
+paired.soil <- pairedpase %>% 
+  filter(Pase_Type == "Soil")
+
+paired.soil.box <- ggplot(data = paired.soil, aes(x = Site, y = Pase, fill = Depth)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  guides(fill = FALSE) +
+  scale_y_continuous(limits = c(0, 15), breaks = c(0, 5, 10, 15)) + 
+  scale_fill_brewer(palette = "Set2") + ylab(expression(Phosphatase~(mu~mol~pNP~gsoil^{-1})))
+
+pdf("paired_soilbox.pdf")
+plot(paired.soil.box)
+dev.off()
+  
+  
 ```
 
 ```{r Paired volume}
@@ -193,6 +231,22 @@ ggplot(data = paired.vol, aes(x = Site, y = Pase_vol, fill = Depth..cm.)) + geom
         legend.background = element_rect(colour = "black")) +
   scale_fill_brewer(palette = "Set2") +
   ylab(expression(Phosphatase~(mu~mol~pNP~g^{-1})))
+
+# root paired by vol
+root.vol <- paired.vol %>% 
+  filter(Type == "Root")
+View(root.vol)
+
+root.vol.box <- ggplot(data = root.vol, aes(x = Site, y = Pase_vol, fill = Depth..cm.)) + geom_boxplot() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  guides(fill = FALSE) + 
+  scale_fill_brewer(palette = "Set2") +
+  ylab(expression(Root~Phosphatase~(mu~mol~pNP~groot^{-1})))
+
+pdf("root_volbox.pdf")
+plot(root.vol.box)
+dev.off()
 ```
 
 ```{r Table 3, fig.cap=tab.3_cap}
@@ -244,7 +298,8 @@ summary(pairedmanova.aov)
 An outlier test using Cooks Distance indicates that sample 19 (EVV Location 1: 0-5 cm) is a data point that significantly skews statistical models. In this case, sample 19 is 4 times the mean, suggesting that it should not be included. Phosphorus availability differed among sites (p < 0.001), but not by depth. Generally, El Verde sites contained more phosphorus than in Icacos sites and there weren't any consistent patterns of phosphorus availability by depth. 
 
 ```{r Data Import ResinP}
-resinp <- read.csv("~/Documents/LabStats/PR2019/PR2019_resinp.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+resinp <- read.csv("~/Documents/Stats/PR2019/PR2019_resinp.csv", header = TRUE, na.strings = "NA", stringsAsFactors = TRUE)
+
 ```
 
 ## Outlier Test
@@ -266,8 +321,10 @@ resinp <- resinp %>%
 
 ## Summary Statistics
 ```{r Figure 6, fig.cap=fig.6_cap}
+
+# boxplot 
 ggplot(data = resinp, aes(x = SoilDepth, y = ResinP)) + geom_boxplot() + facet_grid(.~Site) +
-  scale_x_discrete(limits = c("0-5cm", "7-12cm", "14-19cm", "27-32cm", "47-52cm", "87-92cm")) +
+  scale_x_discrete(limits = c("0-5cm", "7-12cm", "15-20cm", "25-30cm", "45-50cm", "80-90cm")) +
   scale_y_continuous(limits = c(0, 2.00)) +
   theme_bw() + theme(panel.grid = element_blank(),
                      axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1),
@@ -282,7 +339,47 @@ resinp.sum <- resinp %>%
             mean = mean(ResinP, na.rm = TRUE),
             sd = sd(ResinP, na.rm = TRUE),
             se = std.error(ResinP, na.rm = TRUE))
-resinp.sum
+View(resinp.sum)
+
+resinp.sum$SoilDepth = factor(resinp.sum$SoilDepth , levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+
+# geom_point resin p
+resinp.point <- ggplot(data = resinp.sum, aes(x = SoilDepth, y = mean, colour = Site, group = Site)) + 
+  geom_point(size = 3) +
+  geom_line(na.rm = FALSE) + 
+  scale_y_continuous(limits = c(0, 1.00)) +
+  scale_colour_brewer(palette = "Set2") +
+  theme_bw() + theme(panel.grid = element_blank(),
+                     axis.text.x = element_text(hjust = 1, vjust = 1),
+                     axis.title.x = element_blank(),
+                     legend.position = c(0.9,0.8)) +
+  ylab(expression(Phosphorus~availability~(mu~g~P~g^{-1})))
+
+pdf("resinp.pdf")
+plot(resinp.point)
+dev.off()
+
+
+resinp.sum.site <- resinp %>% 
+  group_by(Site) %>% 
+  summarise(n = n(),
+            mean = mean(ResinP, na.rm = TRUE),
+            sd = sd(ResinP, na.rm = TRUE),
+            se = std.error(ResinP, na.rm = TRUE))
+resinp.sum.site
+
+resinpsum.plot <- ggplot(data = resinp.sum.site, aes(x = Site, y = mean)) + geom_bar(stat = "identity") +
+  geom_errorbar(aes(ymax = mean+se, ymin = mean-se), width = 0.2) + 
+  scale_y_continuous(limits = c(0, 1.00)) +
+  scale_colour_brewer(palette = "Set2") +
+  theme_bw() + theme(panel.grid = element_blank(),
+                     axis.text.x = element_text(hjust = 1, vjust = 1),
+                     axis.title.x = element_blank()) +
+  ylab(expression(Phosphorus~availability~(mu~g~P~g^{-1})))
+
+pdf("resinp_sitesum.pdf")
+plot(resinpsum.plot)
+dev.off()
 ```
 
 ## ANOVA
@@ -294,13 +391,15 @@ summary(resinp.aov)
 
 # Organic P
 Unlike resin P, there are stark differences in organic phosphorus content among the sites (p < 0.001) and depths (p < 0.01). In particular, both El Verde sites have significantly higher concentrations than in the Icacos sites. There was no significant interaction between site and depth in determining organic phosphorus, and the boxplot suggests that organic phosphorus tends to decrease until 25-30 cm before increasing slightly. 
+**double check with re-done values**
 
 ```{r Organic P Data Import}
-orgp <- read.csv("~/Documents/LabStats/PR2019/OrganicP.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+orgp <- read.csv("~/Documents/Stats/PR2019/OrganicP.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
 
 # total p
 orgp <- orgp %>% 
   mutate(OrgP_Total = OrgP_Acid + OrgP_Alkali)
+View(orgp)
 ```
 
 ## Summary Statistics
@@ -314,12 +413,49 @@ ggplot(data = orgp, aes(x = Depth, y = OrgP_Total)) + geom_boxplot() +
 ```
 
 ```{r Organic P Mean}
-orgp %>%
+orgp.sum <- orgp %>%
   group_by(Site, Depth) %>% 
   summarise(n = n(),
             mean = mean(OrgP_Total, na.rm = TRUE),
             sd = sd(OrgP_Total, na.rm = TRUE),
             se = std.error(OrgP_Total, na.rm = TRUE))
+
+# geom_point organic p
+orgp.point <- ggplot(data = orgp.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_point(size = 3) +
+  geom_line(na.rm = FALSE) + 
+  scale_x_discrete(limits = c("0 -5 cm", "7-12 cm", "15-20 cm", "25-30 cm", "45-50 cm", "80-90 cm"), breaks = c("0 -5 cm", "7-12 cm", "15-20 cm", "25-30 cm", "45-50 cm", "80-90 cm")) +
+  scale_y_continuous(limits = c(0, 1.00)) +
+  scale_colour_brewer(palette = "Set2") +
+  theme_bw() + theme(panel.grid = element_blank(),
+                     axis.title.x = element_blank(),
+                     legend.position = c(0.9,0.8)) +
+  ylab(expression(Total~Organic~Phosphorus~(mg~P~g^{-1})))
+
+pdf("organicp.pdf")
+plot(orgp.point)
+dev.off()
+
+# orgp.site
+orgp.sum2 <- orgp %>%
+  group_by(Site) %>% 
+  summarise(n = n(),
+            mean = mean(OrgP_Total, na.rm = TRUE),
+            sd = sd(OrgP_Total, na.rm = TRUE),
+            se = std.error(OrgP_Total, na.rm = TRUE))
+
+orgp.site <- ggplot(data = orgp.sum2, aes(x = Site, y = mean)) + geom_bar(stat = "identity") +
+   geom_errorbar(aes(ymax = mean+se, ymin = mean-se), width = 0.2) + 
+  scale_y_continuous(limits = c(0, 1.00)) +
+  scale_colour_brewer(palette = "Set2") +
+  theme_bw() + theme(panel.grid = element_blank(),
+                     axis.title.x = element_blank()) +
+  ylab(expression(Total~organic~phosphorus~(mg~P~g^{-1})))
+
+pdf("orgp_site.pdf")
+plot(orgp.site)
+dev.off()
+  
 ```
 
 ## ANOVA
@@ -339,15 +475,38 @@ The relationship between resin P and soil phosphatase depends on site and depth.
 ```{r}
 pase.corr <- cbind(soilpase, resinp$ResinP)
 pase.corr <- pase.corr %>% 
-  select(Site, Location, Depth, Pase, 'resinp$ResinP')
+  select(Site, Location, Depth, SoilPase, 'resinp$ResinP')
 
 pase.corr$Depth = factor(pase.corr$Depth, levels = c('0-5cm', '7-12cm', '14-19cm', '27-32cm', '47-52cm', '87-92cm'))
 
-ggplot(data = pase.corr, aes(x = resinp$ResinP, y = Pase, colour = Site)) +
-  geom_point(alpha = 0.5, size=5) + facet_grid(. ~ Depth) +
+ggplot(data = pase.corr, aes(x = resinp$ResinP, y = SoilPase, colour = Depth, shape = Site)) +
+  geom_point(alpha = 0.6, size=5) +
   scale_color_brewer(palette = "Set1") + theme_bw() +
-  theme(panel.grid = element_blank(),
-        legend.position = c(0.95, 0.9)) + xlab(expression(Phosphorus~availability~(mu~P~g^{-1}))) + ylab(expression(Soil~Phosphatase~(mu~pNP~g^{-1})))
+  theme(panel.grid = element_blank()) + 
+  xlab(expression(Phosphorus~availability~(mu~P~g^{-1}))) +
+  ylab(expression(Soil~Phosphatase~(mu~pNP~g^{-1})))
+
+cor.resinpase <- cor.test(pase.corr$`resinp$ResinP`, pase.corr$SoilPase,
+                method = "pearson")
+cor.resinpase
+
+# try graph with means to make it easier to read
+pase.corr.sum <- pase.corr %>% 
+  group_by(Site, Depth) %>% 
+  summarise(mean_pase = mean(SoilPase, na.rm = TRUE),
+            mean_resin = mean(`resinp$ResinP`, na.rm = TRUE))
+
+meanpase.resinplot <- ggplot(data = pase.corr.sum, aes(x = mean_resin, y = mean_pase, colour = Depth, shape = Site)) +
+  geom_point(size = 5) +
+  scale_color_brewer(palette = "Set2") + theme_bw() +
+  theme(panel.grid = element_blank()) + 
+  xlab(expression(Mean~phosphorus~availability~(mu~P~g^{-1}))) +
+  ylab(expression(Mean~soil~phosphatase~(mu~pNP~g^{-1})))
+
+pdf("mean_paseresin.pdf")
+plot(meanpase.resinplot)
+dev.off()
+
 ```
 
 ```{r Resin P x Phosphatase volume}
@@ -369,12 +528,33 @@ ggplot(data = resinp.vol, aes(x = resinp_vol, y = pase.vol$SoilPase_vol, colour 
 # cbind
 orgp <- cbind(orgp, resinp$ResinP)
 
-ggplot(data = orgp, aes(x = OrgP_Total, y = `resinp$ResinP`, colour = Site)) +
-  geom_point(alpha = 0.5, size = 4) + facet_grid(.~Depth) + theme_bw() + 
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
-  xlab(expression(Organic~P~(mg~P~g^{-1}))) + ylab(expression(Inorganic~P~(mu~g~P~g^{-1}))) +
-  scale_color_brewer(palette = "Set1")
+# converting resin p units to mg/g soil
+orgp <- orgp %>% 
+  mutate(resin_mg = `resinp$ResinP`/1000)
+
+# resin p and organic p summary
+orgp.2 <- orgp %>% 
+  select(Site, Depth, OrgP_Total, `resinp$ResinP`) %>% 
+  group_by(Site, Depth) %>% 
+  summarise(mean_org = mean(OrgP_Total, na.rm = TRUE),
+            mean_resin = mean(`resinp$ResinP`, na.rm = TRUE))
+
+# x = org, y = resinp
+orgp_resinp.cor <- ggplot(data = orgp.2, aes(x = mean_org, y = mean_resin, colour = Depth, shape = Site)) +
+  geom_point(size = 4) + theme_bw() +
+  theme(panel.grid = element_blank()) + 
+  xlab(expression(Mean~Organic~P~(mg~P~g^{-1}))) + ylab(expression(Mean~Resin~P~(mu~g~P~g^{-1}))) +
+  scale_color_brewer(palette = "Set2")
+
+pdf("cor_orgp_resinp.pdf")
+plot(orgp_resinp.cor)
+dev.off()
+
+
+res <- cor.test(orgp$OrgP_Total, orgp$`resinp$ResinP`,
+                method = "pearson")
+# http://www.sthda.com/english/wiki/correlation-test-between-two-variables-in-r#compute-correlation-in-r
+
 ```
 
 ## Organic P x Soil Phosphatase
@@ -382,16 +562,42 @@ The relationship between organic P and soil phosphatase mirrors that of resin P,
 
 ```{r}
 # binding soil phosphatase data 
-orgp <- cbind(orgp, soilpase$Pase)
+orgp <- cbind(orgp, soilpase$SoilPase)
 
 orgp$Depth = factor(orgp$Depth, levels = c("0 -5 cm", "7-12 cm", "15-20 cm", "25-30 cm", "45-50 cm", "80-90 cm"))
 
-ggplot(data = orgp, aes(x = OrgP_Total, y = `soilpase$Pase`, colour = Site)) + 
-  geom_point(alpha = 0.5, size = 4) + facet_grid(.~Depth) + theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+orgp.pase.corrplot <- ggplot(data = orgp, aes(x = OrgP_Total, y = `soilpase$SoilPase`, colour = Depth, shape = Site)) + 
+  geom_point(alpha = 0.5, size = 4) + theme_bw() +
+  theme(panel.grid = element_blank()) +
   xlab(expression(Organic~Phosphorus~(mg~P~g^{-1}))) +
-  ylab(expression(Soil~Phosphatase~(mu~mol~pNP~g^{-1})))
+  ylab(expression(Soil~Phosphatase~(mu~mol~pNP~g^{-1}))) +
+  scale_color_brewer(palette = "Set2")
+
+pdf("corr_orgpase.pdf")
+plot(orgp.pase.corrplot)
+dev.off()
+
+cor.orgpase <- cor.test(orgp$OrgP_Total, orgp$`soilpase$SoilPase`,
+                method = "pearson")
+cor.orgpase
+View(orgp)
+
+# try graph with means to make it easier to read
+pase.org.sum <- orgp %>% 
+  group_by(Site, Depth) %>% 
+  summarise(mean_pase = mean(`soilpase$SoilPase`, na.rm = TRUE),
+            mean_orgp = mean(OrgP_Total, na.rm = TRUE))
+
+meanpase.orgplot <- ggplot(data = pase.org.sum, aes(x = mean_orgp, y = mean_pase, colour = Depth, shape = Site)) +
+  geom_point(size = 5) +
+  scale_color_brewer(palette = "Set2") + theme_bw() +
+  theme(panel.grid = element_blank()) + 
+  xlab(expression(Mean~total~organic~P~(mu~P~g^{-1}))) +
+  ylab(expression(Mean~soil~phosphatase~(mu~pNP~g^{-1})))
+
+pdf("mean_paseresin.pdf")
+plot(meanpase.resinplot)
+dev.off()
 ```
 
 ## Root Biomass x Root Phosphatase
@@ -401,13 +607,39 @@ As expected, root biomass decreass with depth. Root biomass does not appear ot d
 **Need to remove 5-7 cm depth (facet #2)**
 
 ```{r}
-biom.corr <- read.csv("~/Documents/LabStats/PR2019/BiomassCorrelations.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+biom.corr <- read.csv("~/Documents/Stats/PR2019/BiomassCorrelations.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+View(biom.corr)
 
 ggplot(data = biom.corr, aes(x = RootBiomass, y = SoilPase_vol, colour = Site)) + geom_point(alpha = 0.5, size = 5) + facet_grid(. ~ DepthNumber) + theme_bw() +
   theme(panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   xlab(expression(Root~biomass~(g~cm^{-3}))) +
   ylab(expression(Soil~Phosphatase~(mu~mol~pNP~g^{-3})))
+
+biom.corr.sum <- biom.corr %>% 
+  group_by(Site, DepthNumber) %>% 
+  summarise(mean_root = mean(RootBiomass, na.rm = TRUE),
+            mean_pase = mean(SoilPase_vol, na.rm = TRUE))
+
+str(biom.corr.sum)
+biom.corr.sum$DepthNumber <- as.factor(biom.corr.sum$DepthNumber)
+
+biom.paseplot <- ggplot(data = biom.corr.sum, aes(x = mean_root, y = mean_pase, colour = DepthNumber, shape = Site)) + 
+  geom_point(alpha = 0.5, size = 5) + scale_color_brewer(palette = "Set2") +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  xlab(expression(Root~biomass~(g~cm^{-3}))) +
+  ylab(expression(Soil~Phosphatase~(mu~mol~pNP~g^{-3}))) 
+
+pdf("biom.pase.pdf")
+plot(biom.paseplot)
+dev.off()
+
+rootbiom.corr <- cor.test(biom.corr$RootBiomass, biom.corr$SoilPase_vol,
+                method = "pearson")
+
+
+
 ```
 
 # Principal Component Analysis
