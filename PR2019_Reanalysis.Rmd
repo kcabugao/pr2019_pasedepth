@@ -1,0 +1,1330 @@
+---
+title: "PR2019 Re-analysis"
+output: html_notebook
+---
+
+Re-compiled datasets and re-analyzed to ensure that results are consistent. Created R sheets with all variables at consistent depths. Notes for how depths were combined in master sheet. 
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+# Packages
+```{r Packages}
+library(tidyverse)
+library(car)
+library(reshape2)
+library(plotrix)
+library(captioner)
+library(knitr)
+library(factoextra)
+library(naniar)
+library(agricolae)
+```
+
+# Datasets
+```{r}
+pasecore <- read.csv("~/Documents/LabStats/PR2019/PaseCore_R.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+shortcore <- read.csv("~/Documents/LabStats/PR2019/ShortCore_R.csv", header = TRUE, stringsAsFactors = TRUE, na.strings = "NA")
+
+mytheme <- (theme_bw(base_size = 14)) + theme(panel.grid = element_blank(), 
+                                              aspect.ratio = 1,
+                                              axis.text = element_text(colour = "black"))
+```
+
+# Testing Outliers
+## Soil Phosphatase Core
+```{r BD}
+# outlier test: Cook's D
+mod <- lm(BulkDens ~ Site*Depth, data = pasecore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 67 (ICAV Location 3 0-5cm 1.048)
+pasecore <- pasecore %>%
+  replace_with_na(replace = list(BulkDens = 1.048))
+```
+```{r ResinP}
+# outlier test: Cook's D
+mod <- lm(ResinP ~ Site*Depth, data = pasecore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 19 (EVV Location 1 0-5cm = 114.269)
+pasecore <- pasecore %>%
+  replace_with_na(replace = list(ResinP = 114.269))
+```
+```{r Total OP}
+# outlier test: Cook's D
+mod <- lm(Total_OrgP ~ Site*Depth, data = pasecore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 24 (EVV Location 1 80-90cm = 0.358)
+pasecore <- pasecore %>%
+  replace_with_na(replace = list(Total_OrgP = 0.358))
+```
+```{r Soil Pase}
+# outlier test: Cook's D
+mod <- lm(SoilPase_vol ~ Site*Depth, data = pasecore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 4 o both SoilPase_g and SoilPase_vol (EVR Location 1 25-30cm = 13.987 / 15.245)
+pasecore <- pasecore %>%
+  replace_with_na(replace = list(SoilPase_g = 13.987)) %>% 
+  replace_with_na(replace = list(SoilPase_vol = 15.245))
+View(pasecore)
+```
+```{r Coarse Root}
+# outlier test: Cook's D
+mod <- lm(CoarseRootDensity ~ Site*Depth, data = pasecore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 61 (ICA-V Location 2 0-5 cm = 4.296)
+pasecore <- pasecore %>%
+  replace_with_na(replace = list(CoarseRootDensity = 4.296))
+View(pasecore)
+```
+```{r Fine Root}
+# outlier test: Cook's D
+mod <- lm(FineRootDensity ~ Site*Depth, data = pasecore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 44 (ICA-R Location 2 7-12 cm = 0.617)
+pasecore <- pasecore %>%
+  replace_with_na(replace = list(FineRootDensity = 0.617))
+```
+
+## Short Core
+```{r Short BD}
+# outlier test: Cook's D
+mod <- lm(BulkDensity ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 34 (ICAV Location 3 0-10cm 0.914)
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(BulkDensity = 0.914))
+View(shortcore)
+```
+```{r Short ResinP}
+# outlier test: Cook's D
+mod <- lm(ResinP ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 10 (EVV Location 1 10-20cm = 63.39500)
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(ResinP = 63.39500))
+```
+```{r Short Total OP}
+# outlier test: Cook's D
+mod <- lm(Total_OrgP ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 11, 12 (EVV Location 1 10-20 cm = 0.31800 / EVV Location 1 20-30 cm = 0.27700)
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(Total_OrgP = 0.31800)) %>% 
+  replace_with_na(replace = list(Total_OrgP = 0.27700))
+View(shortcore)
+```
+```{r Short Soil Pase}
+# outlier test: Cook's D
+mod <- lm(SoilPase_g ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 9 SoilPase_vol (EVR Location 3 20-30cm = 10.986) and 9 on SoilPase_g (10.931)
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(SoilPase_g = 10.931)) %>% 
+  replace_with_na(replace = list(SoilPase_vol = 10.986))
+View(shortcore)
+```
+```{r Short Fine Root}
+# outlier test: Cook's D
+mod <- lm(FineRootDensity ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 22 (ICA-R Location 2 0-10 cm = 0.897)
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(FineRootDensity = 0.897))
+```
+```{r Short SA}
+# outlier test: Cook's D
+mod <- lm(RootSurfaceArea ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 19 (ICA-R Location 1 0-10 cm = 75.78)
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(RootSurfaceArea = 75.78))
+```
+```{r Short Root Pase}
+# outlier test: Cook's D
+mod <- lm(RootPase_vol ~ Site*Depth, data = shortcore)
+cooksd <- cooks.distance(mod)
+
+# plot Cook's D using 4/n
+plot(cooksd, pch = "*", cex = 2, main = "Influential Obs by Cooks distance")
+abline(h = 4/70, col="red")
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4/70, names(cooksd),""), col="red")
+
+# replacing 24 (ICA-R Location 2 20-30 cm = 167.288) / 22 ICAR 2 0-10 = 0.065
+shortcore <- shortcore %>%
+  replace_with_na(replace = list(RootPase_groot = 167.288)) %>% 
+  replace_with_na(replace = list(RootPase_vol = 0.065))
+View(shortcore)
+```
+
+# Testing Normality and Variance
+```{r Soil Pase Core}
+# Bulk Density
+qqPlot(pasecore$BulkDens)
+shapiro.test(pasecore$BulkDens) # normal
+leveneTest(BulkDens ~ Site*Depth, data = pasecore) # good 
+
+# Resin P
+qqPlot(pasecore$ResinP)
+shapiro.test(pasecore$ResinP)  # not normal
+leveneTest(ResinP ~ Site*Depth, data = pasecore)  # good
+
+# Total_OrgP
+qqPlot(pasecore$Total_OrgP)
+shapiro.test(pasecore$Total_OrgP) # not normal
+leveneTest(Total_OrgP ~ Site*Depth, data = pasecore) # good
+
+# Percent P 
+qqPlot(pasecore$PercentP)
+shapiro.test(pasecore$PercentP) # normal
+leveneTest(PercentP ~ Site*Depth, data = pasecore) # good
+
+# Soil Pase (g)
+qqPlot(pasecore$SoilPase_g)
+shapiro.test(pasecore$SoilPase_g) # not normal
+leveneTest(SoilPase_g ~ Site*Depth, data = pasecore) # good
+
+# Soil Pase (vol)
+qqPlot(pasecore$SoilPase_vol)
+shapiro.test(pasecore$SoilPase_vol) # not normal
+leveneTest(SoilPase_vol ~ Site*Depth, data = pasecore) # not good. definitely use non-parametric
+
+# Coarse Root Density
+qqPlot(pasecore$CoarseRootDensity)
+shapiro.test(pasecore$CoarseRootDensity) # not normal
+leveneTest(CoarseRootDensity ~ Site*Depth, data = pasecore) # good
+
+# Fine Root Density
+qqPlot(pasecore$FineRootDensity)
+shapiro.test(pasecore$FineRootDensity) # not normal
+leveneTest(FineRootDensity ~ Site*Depth, data = pasecore) # good
+```
+
+
+```{r Short Core}
+
+# Root Pase
+qqPlot(shortcore$RootPase_groot)
+shapiro.test(shortcore$RootPase_groot) # not normal
+leveneTest(RootPase_groot ~ Site*Depth, data = shortcore) # variance ok
+
+# Coarse Root Density
+qqPlot(shortcore$CoarseRootDensity)
+shapiro.test(shortcore$CoarseRootDensity) # not normal
+leveneTest(CoarseRootDensity ~ Site*Depth, data = shortcore) # good
+
+# Fine Root Density
+qqPlot(shortcore$FineRootDensity)
+shapiro.test(shortcore$FineRootDensity) # not normal
+leveneTest(FineRootDensity ~ Site*Depth, data = shortcore) # variance ok
+
+# Root Pase vol
+qqPlot(shortcore$RootPase_vol)
+shapiro.test(shortcore$RootPase_vol) # not normal
+leveneTest(RootPase_vol ~ Site*Depth, data = shortcore) # not good
+
+# Root Surface Area
+qqPlot(shortcore$RootSurfaceArea)
+shapiro.test(shortcore$RootSurfaceArea) # normal
+leveneTest(RootSurfaceArea ~ Site*Depth, data = shortcore) # variance ok
+
+# Bulk Density
+qqPlot(shortcore$BulkDensity)
+shapiro.test(shortcore$BulkDensity) # normal
+leveneTest(BulkDensity ~ Site*Depth, data = shortcore) # good 
+
+# Resin P
+qqPlot(shortcore$ResinP)
+shapiro.test(shortcore$ResinP)  # not normal
+leveneTest(ResinP ~ Site*Depth, data = shortcore)  # variance ok
+
+# Total_OrgP
+qqPlot(shortcore$Total_OrgP)
+shapiro.test(shortcore$Total_OrgP) # not normal
+leveneTest(Total_OrgP ~ Site*Depth, data = shortcore) # good
+
+# Percent P 
+qqPlot(shortcore$PercentP)
+shapiro.test(shortcore$PercentP) # normal
+leveneTest(PercentP ~ Site*Depth, data = shortcore) # good
+
+# Soil Pase (g)
+qqPlot(shortcore$SoilPase_g)
+shapiro.test(shortcore$SoilPase_g) # normal
+leveneTest(SoilPase_g ~ Site*Depth, data = shortcore) # good
+
+# Soil Pase (vol)
+qqPlot(shortcore$SoilPase_vol)
+shapiro.test(shortcore$SoilPase_vol) # not normal
+leveneTest(SoilPase_vol ~ Site*Depth, data = shortcore) # variance ok
+
+
+```
+
+
+
+# Soil Phosphatase Core
+## Summaries
+```{r BD Summary}
+
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = BulkDens)) + geom_boxplot(aes(fill = Site)) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1))
+
+# mean, sd, se: site x depth
+bulkdens.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(BulkDens, na.rm = TRUE),
+            sd = sd(BulkDens, na.rm = TRUE),
+            se = ((sd(BulkDens, na.rm = TRUE))/sqrt(n())))
+
+bulkdens.sum$Depth = factor(bulkdens.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = bulkdens.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Bulk~Density))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = bulkdens.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Bulk~Density))
+
+# mean, sd, se: site 
+bulkdens.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(BulkDens, na.rm = TRUE),
+            sd = sd(BulkDens, na.rm = TRUE),
+            se = ((sd(BulkDens, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = bulkdens.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Bulk~Density)) +
+  theme(axis.title.x = element_blank())
+```
+
+
+```{r Organic P Summary}
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = Total_OrgP)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Total~Organic~P))
+
+# mean, sd, se: site x depth
+organicp.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(Total_OrgP, na.rm = TRUE),
+            sd = sd(Total_OrgP, na.rm = TRUE),
+            se = ((sd(Total_OrgP, na.rm = TRUE))/sqrt(n())))
+
+organicp.sum$Depth = factor(organicp.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = organicp.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Total~Organic~P))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = organicp.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Total~Organic~P))
+
+# mean, sd, se: site 
+organicp.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(Total_OrgP, na.rm = TRUE),
+            sd = sd(Total_OrgP, na.rm = TRUE),
+            se = ((sd(Total_OrgP, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = organicp.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Organic~P)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Resin P Summary}
+
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = ResinP)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Resin~P))
+
+# mean, sd, se: site x depth
+resinp.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(ResinP, na.rm = TRUE),
+            sd = sd(ResinP, na.rm = TRUE),
+            se = ((sd(ResinP, na.rm = TRUE))/sqrt(n())))
+
+resinp.sum $Depth = factor(resinp.sum $Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = resinp.sum , aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Resin~P))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = resinp.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd, alpha = 0.5) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Resin~P))
+
+# mean, sd, se: site 
+resinp.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(ResinP, na.rm = TRUE),
+            sd = sd(ResinP, na.rm = TRUE),
+            se = ((sd(ResinP, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = resinp.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Resin~P)) +
+  theme(axis.title.x = element_blank())
+
+```
+```{r Coarse Root Summary}
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = CoarseRootDensity)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Coarse~Root~Density))
+
+# mean, sd, se: site x depth
+coarseroot.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(CoarseRootDensity, na.rm = TRUE),
+            sd = sd(CoarseRootDensity, na.rm = TRUE),
+            se = ((sd(CoarseRootDensity, na.rm = TRUE))/sqrt(n())))
+
+coarseroot.sum$Depth = factor(coarseroot.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = coarseroot.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Coarse~Root~P))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = coarseroot.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd, alpha = 0.5) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Coarse~Root))
+
+# mean, sd, se: site 
+coarseroot.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(CoarseRootDensity, na.rm = TRUE),
+            sd = sd(CoarseRootDensity, na.rm = TRUE),
+            se = ((sd(CoarseRootDensity, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = coarseroot.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Coarse~Root)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Fine Root Summary}
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = FineRootDensity)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Fine~Root~Density))
+
+# mean, sd, se: site x depth
+fineroot.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(FineRootDensity, na.rm = TRUE),
+            sd = sd(FineRootDensity, na.rm = TRUE),
+            se = ((sd(FineRootDensity, na.rm = TRUE))/sqrt(n())))
+
+fineroot.sum$Depth = factor(fineroot.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = fineroot.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Fine~Root))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = fineroot.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd, alpha = 0.5) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Fine~Root))
+
+# mean, sd, se: site 
+fineroot.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(FineRootDensity, na.rm = TRUE),
+            sd = sd(FineRootDensity, na.rm = TRUE),
+            se = ((sd(FineRootDensity, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = fineroot.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Fine~Root)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Texture Summary}
+
+library(reshape2)
+pase.texture <- pasecore %>% 
+  select(Site, Depth, Sand, Clay, Silt)
+
+# site x depth
+pase.text.sum <- pase.texture %>% 
+  group_by(Site, Depth) %>%
+  summarise_all(funs(mean, sd))
+
+pase.text.sum.melt <- pase.text.sum %>% 
+  select(Site, Depth, Sand_mean, Clay_mean, Silt_mean)
+pase.text.sum.melt <- melt(pase.text.sum.melt, id = c("Site", "Depth"))
+View(pase.text.sum.melt)
+
+ggplot(pase.text.sum.melt, aes(x = Depth, y = value, fill = variable)) + facet_grid(.~Site) +
+  geom_bar(stat = "identity") + mytheme + theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust = 1),
+                                                axis.title = element_blank())
+
+# site
+pase.text.sum2 <- pase.texture %>%
+  select(Site, Sand, Clay, Silt) %>% 
+  group_by(Site) %>%
+  summarise_each(funs(mean(., na.rm = TRUE)))
+
+pase.text.sum.melt2 <- melt(pase.text.sum2, id = c("Site"))
+
+ggplot(pase.text.sum.melt2, aes(x = Site, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + mytheme + theme(axis.title = element_blank())
+```
+```{r Root P Summary}
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = PercentP)) + geom_boxplot(aes(fill = Site)) + mytheme
+
+# mean, sd, se: site x depth
+percentp.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(PercentP, na.rm = TRUE),
+            sd = sd(PercentP, na.rm = TRUE),
+            se = ((sd(PercentP, na.rm = TRUE))/sqrt(n())))
+
+percentp.sum$Depth = factor(percentp.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = percentp.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Root~'%'~P))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = percentp.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd, alpha = 0.5) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Root~'%'~P))
+
+# mean, sd, se: site 
+percentp.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(PercentP, na.rm = TRUE),
+            sd = sd(PercentP, na.rm = TRUE),
+            se = ((sd(PercentP, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = percentp.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Root~'%'~P)) +
+  theme(axis.title.x = element_blank())
+```
+### Soil Pase Core
+```{r Soil Pase g Summary}
+
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = SoilPase_g)) + geom_boxplot(aes(fill = Site)) + mytheme
+
+# mean, sd, se: site x depth
+soilpase_g.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_g, na.rm = TRUE),
+            sd = sd(SoilPase_g, na.rm = TRUE),
+            se = ((sd(SoilPase_g, na.rm = TRUE))/sqrt(n())))
+
+soilpase_g.sum$Depth = factor(soilpase_g.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = soilpase_g.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Soil~Phosphatase))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = soilpase_g.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd, alpha = 0.5) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Soil~Phosphatase))
+
+# mean, sd, se: site 
+soilpase_g.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_g, na.rm = TRUE),
+            sd = sd(SoilPase_g, na.rm = TRUE),
+            se = ((sd(SoilPase_g, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = soilpase_g.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Soil~Phosphatase)) +
+  theme(axis.title.x = element_blank())
+```
+
+```{r Soil Pase vol Summary}
+
+# boxplot
+pasecore$Depth = factor(pasecore$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = pasecore, aes(x = Depth, y = SoilPase_vol)) + geom_boxplot(aes(fill = Site)) + mytheme
+
+# mean, sd, se: site x depth
+soilpase_vol.sum <- pasecore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_vol, na.rm = TRUE),
+            sd = sd(SoilPase_vol, na.rm = TRUE),
+            se = ((sd(SoilPase_vol, na.rm = TRUE))/sqrt(n())))
+
+soilpase_vol.sum$Depth = factor(soilpase_vol.sum$Depth, levels = c('0-5cm', '7-12cm', '15-20cm', '25-30cm', '45-50cm', '80-90cm'))
+ggplot(data = soilpase_vol.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Soil~Phosphatase))
+
+# point
+pd <- position_dodge(0.1) # moves them 0.05 to the left and right
+
+ggplot(data = soilpase_vol.sum, aes(x = Depth, y = mean, colour = Site, group = Site)) + 
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0.2, position = pd, alpha = 0.5) +
+  geom_line(position = pd) +
+  geom_point(position = pd, alpha = 0.5, size = 3) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Soil~Phosphatase))
+
+# mean, sd, se: site 
+soilpase_vol.sum2 <- pasecore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_vol, na.rm = TRUE),
+            sd = sd(SoilPase_vol, na.rm = TRUE),
+            se = ((sd(SoilPase_vol, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = soilpase_vol.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Soil~Phosphatase)) +
+  theme(axis.title.x = element_blank())
+```
+
+
+
+## Correlations
+```{r Bulk Density}
+
+# BD x Total Organic P
+ggplot(data = pasecore, aes(x = BulkDens, y = Total_OrgP)) + geom_point() + mytheme
+
+# BD x Resin P
+ggplot(data = pasecore, aes(x = BulkDens, y = ResinP)) + geom_point() + mytheme
+
+# BD x Percent P
+ggplot(data = pasecore, aes(x = BulkDens, y = PercentP)) + geom_point() + mytheme
+
+# Coarse Root
+ggplot(data = pasecore, aes(x = BulkDens, y = CoarseRootDensity)) + geom_point() + mytheme
+
+# Fine Root - significant
+ggplot(data = pasecore, aes(x = BulkDens, y = FineRootDensity)) + geom_point() + mytheme
+```
+
+```{r Organic P}
+
+# Total Organic P x Resin P - significant
+ggplot(data = pasecore, aes(x = Total_OrgP, y = ResinP)) + geom_point() + mytheme
+
+# Total Organic P x Percent P - significant
+ggplot(data = pasecore, aes(x = Total_OrgP, y = PercentP)) + geom_point() + mytheme
+
+# Total Organic P x Coarse Root
+ggplot(data = pasecore, aes(x = Total_OrgP, y = CoarseRootDensity)) + geom_point() + mytheme
+
+# Total Organic P x Fine Root - significant
+ggplot(data = pasecore, aes(x = Total_OrgP, y = FineRootDensity)) + geom_point() + mytheme
+```
+
+```{r Resin P}
+
+# Resin P x Percent P - significant
+ggplot(data = pasecore, aes(x = ResinP, y = PercentP)) + geom_point() + mytheme
+
+# Resin P x Coarse Root
+ggplot(data = pasecore, aes(x = ResinP, y = CoarseRootDensity)) + geom_point() + mytheme
+
+# Resin P x Fine Root - significant
+ggplot(data = pasecore, aes(x = ResinP, y = FineRootDensity)) + geom_point() + mytheme
+```
+
+```{r Coarse & Fine Root}
+
+# Coarse Root x Percent P
+ggplot(data = pasecore, aes(x = CoarseRootDensity, y = PercentP)) + geom_point() + mytheme
+
+# Fine Root x Percent P
+ggplot(data = pasecore, aes(x = FineRootDensity, y = PercentP)) + geom_point() + mytheme
+
+```
+
+```{r Soil Pase Correlations}
+
+# BD x SoilPase - significant
+ggplot(data = pasecore, aes(x = BulkDens, y = SoilPase_g)) + geom_point() + mytheme
+ggplot(data = pasecore, aes(x = BulkDens, y = SoilPase_vol)) + geom_point() + mytheme
+
+# Total Organic P x SoilPase - significant
+ggplot(data = pasecore, aes(x = Total_OrgP, y = SoilPase_g)) + geom_point() + mytheme
+ggplot(data = pasecore, aes(x = Total_OrgP, y = SoilPase_vol)) + geom_point() + mytheme
+
+# Resin P x Soil Pase
+ggplot(data = pasecore, aes(x = ResinP, y = SoilPase_g)) + geom_point() + mytheme
+ggplot(data = pasecore, aes(x = ResinP, y = SoilPase_vol)) + geom_point() + mytheme
+
+# Fine Root x Soil Pase - significant
+ggplot(data = pasecore, aes(x = FineRootDensity, y = SoilPase_g)) + geom_point() + mytheme
+ggplot(data = pasecore, aes(x = FineRootDensity, y = SoilPase_vol)) + geom_point() + mytheme
+```
+
+
+
+
+
+# Paired Phosphatase Core
+## Summaries
+```{r Coarse Root Density}
+
+#boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = CoarseRootDensity)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Coarse~Root~Density))
+
+# mean, sd, se: site x depth
+paired.coarseroot.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(CoarseRootDensity, na.rm = TRUE),
+            sd = sd(CoarseRootDensity, na.rm = TRUE),
+            se = ((sd(CoarseRootDensity, na.rm = TRUE))/sqrt(n())))
+
+paired.coarseroot.sum$Depth = factor(paired.coarseroot.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.coarseroot.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Coarse~Root~P))
+
+# mean, sd, se: site 
+paired.coarseroot.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(CoarseRootDensity, na.rm = TRUE),
+            sd = sd(CoarseRootDensity, na.rm = TRUE),
+            se = ((sd(CoarseRootDensity, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.coarseroot.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Coarse~Root)) +
+  theme(axis.title.x = element_blank())
+
+```
+```{r Fine Root Density}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = FineRootDensity)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Fine~Root~Density))
+
+# mean, sd, se: site x depth
+paired.fineroot.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(FineRootDensity, na.rm = TRUE),
+            sd = sd(FineRootDensity, na.rm = TRUE),
+            se = ((sd(FineRootDensity, na.rm = TRUE))/sqrt(n())))
+
+paired.fineroot.sum$Depth = factor(paired.fineroot.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.fineroot.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Fine~Root~P))
+
+# mean, sd, se: site 
+paired.fineroot.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(FineRootDensity, na.rm = TRUE),
+            sd = sd(FineRootDensity, na.rm = TRUE),
+            se = ((sd(FineRootDensity, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.fineroot.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Fine~Root)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Root Surface Area}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = RootSurfaceArea)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Root~Surface~Area))
+
+# mean, sd, se: site x depth
+paired.rootsa.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(RootSurfaceArea, na.rm = TRUE),
+            sd = sd(RootSurfaceArea, na.rm = TRUE),
+            se = ((sd(RootSurfaceArea, na.rm = TRUE))/sqrt(n())))
+
+paired.rootsa.sum$Depth = factor(paired.rootsa.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.rootsa.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Root~Surface~Area))
+
+# mean, sd, se: site 
+paired.rootsa.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(RootSurfaceArea, na.rm = TRUE),
+            sd = sd(RootSurfaceArea, na.rm = TRUE),
+            se = ((sd(RootSurfaceArea, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.rootsa.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Root~Surface~Area)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Resin P Paired}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = ResinP)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Resin~P))
+
+# mean, sd, se: site x depth
+paired.resinp.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(ResinP, na.rm = TRUE),
+            sd = sd(ResinP, na.rm = TRUE),
+            se = ((sd(ResinP, na.rm = TRUE))/sqrt(n())))
+
+paired.resinp.sum$Depth = factor(paired.resinp.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.resinp.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Resin~P))
+
+# mean, sd, se: site 
+paired.resinp.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(ResinP, na.rm = TRUE),
+            sd = sd(ResinP, na.rm = TRUE),
+            se = ((sd(ResinP, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.resinp.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Resin~P)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Total Organic P}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = Total_OrgP)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Total~Organic~P))
+
+# mean, sd, se: site x depth
+paired.organicp.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(Total_OrgP, na.rm = TRUE),
+            sd = sd(Total_OrgP, na.rm = TRUE),
+            se = ((sd(Total_OrgP, na.rm = TRUE))/sqrt(n())))
+
+paired.organicp.sum$Depth = factor(paired.organicp.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.organicp.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Organic~P))
+
+# mean, sd, se: site 
+paired.organicp.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(Total_OrgP, na.rm = TRUE),
+            sd = sd(Total_OrgP, na.rm = TRUE),
+            se = ((sd(Total_OrgP, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.organicp.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Organic~P)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Root Pase g}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = RootPase_groot)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Root~Phosphatase))
+
+# mean, sd, se: site x depth
+paired.rootpase.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(RootPase_groot, na.rm = TRUE),
+            sd = sd(RootPase_groot, na.rm = TRUE),
+            se = ((sd(RootPase_groot, na.rm = TRUE))/sqrt(n())))
+
+paired.rootpase.sum$Depth = factor(paired.rootpase.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.rootpase.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Root~Phosphatase))
+
+# mean, sd, se: site 
+paired.rootpase.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(RootPase_groot, na.rm = TRUE),
+            sd = sd(RootPase_groot, na.rm = TRUE),
+            se = ((sd(RootPase_groot, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.rootpase.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Root~Phosphatase)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Root Pase vol}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = RootPase_vol)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Root~Phosphatase))
+
+# mean, sd, se: site x depth
+paired.rootpase.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(RootPase_vol, na.rm = TRUE),
+            sd = sd(RootPase_vol, na.rm = TRUE),
+            se = ((sd(RootPase_vol, na.rm = TRUE))/sqrt(n())))
+
+paired.rootpase.sum$Depth = factor(paired.rootpase.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.rootpase.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Root~Phosphatase))
+
+# mean, sd, se: site 
+paired.rootpase.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(RootPase_vol, na.rm = TRUE),
+            sd = sd(RootPase_vol, na.rm = TRUE),
+            se = ((sd(RootPase_vol, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.rootpase.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Root~Phosphatase)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Soil Pase g}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = SoilPase_g)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Soil~Phosphatase))
+
+# mean, sd, se: site x depth
+paired.soilpase.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_g, na.rm = TRUE),
+            sd = sd(SoilPase_g, na.rm = TRUE),
+            se = ((sd(SoilPase_g, na.rm = TRUE))/sqrt(n())))
+
+paired.soilpase.sum$Depth = factor(paired.soilpase.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.soilpase.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Soil~Phosphatase))
+
+# mean, sd, se: site 
+paired.soilpase.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_g, na.rm = TRUE),
+            sd = sd(SoilPase_g, na.rm = TRUE),
+            se = ((sd(SoilPase_g, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.soilpase.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Soil~Phosphatase)) +
+  theme(axis.title.x = element_blank())
+```
+```{r Soil Pase vol}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = SoilPase_vol)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Soil~Phosphatase))
+
+# mean, sd, se: site x depth
+paired.soilpase.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_vol, na.rm = TRUE),
+            sd = sd(SoilPase_vol, na.rm = TRUE),
+            se = ((sd(SoilPase_vol, na.rm = TRUE))/sqrt(n())))
+
+paired.soilpase.sum$Depth = factor(paired.soilpase.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.soilpase.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Soil~Phosphatase))
+
+# mean, sd, se: site 
+paired.soilpase.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(SoilPase_vol, na.rm = TRUE),
+            sd = sd(SoilPase_vol, na.rm = TRUE),
+            se = ((sd(SoilPase_vol, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.rootpase.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Soil~Phosphatase)) +
+  theme(axis.title.x = element_blank())
+```
+
+## Paired MANOVA
+```{r}
+# rank transforming data
+rootpase_vol.rank <- rank(shortcore$RootPase_vol)
+soilpase_vol.rank <- rank(shortcore$SoilPase_vol)
+
+# creating dataset
+shortcore <- cbind(shortcore, rootpase_vol.rank, soilpase_vol.rank)
+shortcore.manova <- shortcore %>% 
+  select(Site, Depth, rootpase_vol.rank, soilpase_vol.rank)
+shortcore.manova <- melt(shortcore.manova, id = c("Site", "Depth"))
+shortcore.manova$ID <- seq.int(nrow(shortcore))
+
+# establishing factors
+shortcore.manova  <- within(shortcore.manova , {
+  Site <- factor(Site)
+  Depth <- factor(Depth)
+  variable <- factor(variable)
+})
+
+# ANOVA
+pairedmanova.aov <- with(shortcore.manova,
+               aov(value ~ variable*Site*Depth + Error(ID / (Site*Depth))))
+summary(pairedmanova.aov)
+```
+
+
+## Root Phosphatase Correlations
+```{r Root Variables}
+
+# Coarse Root x Root Pase
+ggplot(data = shortcore, aes(x = CoarseRootDensity, y = RootPase_vol)) + geom_point() + mytheme
+
+# Fine root x Root Pase - significant 
+ggplot(data = shortcore, aes(x = FineRootDensity, y = RootPase_vol)) + geom_point() + mytheme
+
+# Root surface area - significant
+ggplot(data = shortcore, aes(x = RootSurfaceArea, y = RootPase_vol)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = RootSurfaceArea, y = RootPase_groot)) + geom_point() + mytheme
+
+# Root pase x Percent P
+ggplot(data = shortcore, aes(x = RootPase_vol, y = PercentP)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = RootPase_groot, y = PercentP)) + geom_point() + mytheme
+```
+```{r Soil Variables}
+
+# ResinP x Root Pase
+ggplot(data = shortcore, aes(x = ResinP, y = RootPase_vol)) + geom_point() + mytheme # is resin P by vol or by g? bc will use matching pase
+ggplot(data = shortcore, aes(x = ResinP, y =  RootPase_groot)) + geom_point() + mytheme
+
+# Total_OrgP x Root Pase - significant 
+ggplot(data = shortcore, aes(x = Total_OrgP, y = RootPase_vol)) + geom_point() + mytheme # is organic P by vol or by g?
+ggplot(data = shortcore, aes(x = Total_OrgP, y =  RootPase_groot)) + geom_point() + mytheme
+
+# Bulk density x Root pase - significant
+ggplot(data = shortcore, aes(x = BulkDensity, y = RootPase_vol)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = BulkDensity, y =  RootPase_groot)) + geom_point() + mytheme
+
+# root phosphatase x soil phosphase
+ggplot(data = shortcore, aes(x = RootPase_vol, y =  SoilPase_vol)) + geom_point() + mytheme
+
+```
+
+
+## Soil Phosphatase Correlations
+```{r Soil Pase x Root Variables}
+
+# Coarse Root x Soil Pase
+ggplot(data = shortcore, aes(x = CoarseRootDensity, y = SoilPase_vol)) + geom_point() + mytheme
+
+# Fine root x SoilPase  
+ggplot(data = shortcore, aes(x = FineRootDensity, y = SoilPase_vol)) + geom_point() + mytheme
+
+# Root surface area - significant
+ggplot(data = shortcore, aes(x = RootSurfaceArea, y = SoilPase_vol)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = RootSurfaceArea, y = SoilPase_g)) + geom_point() + mytheme # better
+
+# Soil pase x Percent P
+ggplot(data = shortcore, aes(x = SoilPase_vol, y = PercentP)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = SoilPase_g, y = PercentP)) + geom_point() + mytheme
+```
+```{r Soil Pase x Soil Variables}
+
+# ResinP x Root Pase
+ggplot(data = shortcore, aes(x = ResinP, y = SoilPase_vol)) + geom_point() + mytheme # is resin P by vol or by g? bc will use matching pase
+ggplot(data = shortcore, aes(x = ResinP, y =  SoilPase_g)) + geom_point() + mytheme
+
+# Total_OrgP x Root Pase 
+ggplot(data = shortcore, aes(x = Total_OrgP, y = SoilPase_vol)) + geom_point() + mytheme # is organic P by vol or by g?
+ggplot(data = shortcore, aes(x = Total_OrgP, y =  SoilPase_g)) + geom_point() + mytheme
+
+# Bulk density x Root pase 
+ggplot(data = shortcore, aes(x = BulkDensity, y = SoilPase_vol)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = BulkDensity, y =  SoilPase_g)) + geom_point() + mytheme
+
+```
+## Correlations
+```{r BD Correlations}
+
+# bulk density x fine root - significant
+ggplot(data = shortcore, aes(x = BulkDensity, y = FineRootDensity)) + geom_point() + mytheme
+
+# bulk density x root surface area
+ggplot(data = shortcore, aes(x = BulkDensity, y = RootSurfaceArea)) + geom_point() + mytheme
+
+# bulk density x resin p
+ggplot(data = shortcore, aes(x = BulkDensity, y = ResinP)) + geom_point() + mytheme
+
+# bulk density x total organic P
+ggplot(data = shortcore, aes(x = BulkDensity, y = Total_OrgP)) + geom_point() + mytheme
+
+# bulk density x percentP
+ggplot(data = shortcore, aes(x = BulkDensity, y = PercentP)) + geom_point() + mytheme
+```
+
+```{r Fine Root Correlations}
+
+# Fine root x resin P
+ggplot(data = shortcore, aes(x = FineRootDensity, y = ResinP)) + geom_point() + mytheme
+
+# fine root x root surface area - significant
+ggplot(data = shortcore, aes(x = FineRootDensity, y = RootSurfaceArea)) + geom_point() + mytheme
+
+# fine root x total organic P - significant
+ggplot(data = shortcore, aes(x = FineRootDensity, y = Total_OrgP)) + geom_point() + mytheme
+
+# fine root x percentP - significant 
+ggplot(data = shortcore, aes(x = FineRootDensity, y = PercentP)) + geom_point() + mytheme
+```
+
+```{r Total Organic P Correlations}
+
+# organic p  x resin P
+ggplot(data = shortcore, aes(x = Total_OrgP, y = ResinP)) + geom_point() + mytheme
+
+# organic p  x root surface area - significant
+ggplot(data = shortcore, aes(x = Total_OrgP, y = RootSurfaceArea)) + geom_point() + mytheme
+
+#  organic p  x percentP - significant 
+ggplot(data = shortcore, aes(x = Total_OrgP, y = PercentP)) + geom_point() + mytheme
+```
+
+
+
+
