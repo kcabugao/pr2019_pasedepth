@@ -378,20 +378,23 @@ ggplot(data = bulkdens.sum2, aes(x = Site, y = mean)) +
 ```
 ```{r BD ANOVA}
 # normal data, variance good
-pase.bd.aov <- lm(BulkDens ~ Site + Depth + Site:Depth, data = pasecore)
-summary(pase.bd.aov)
-anova(pase.bd.aov)
+pase.bd.aov <- aov(BulkDens ~ Site + Depth + Site:Depth, data = pasecore)
+summary(pase.bd.aov) # no interaction so analyze separately
 
-# Site and Depth Letters
-site.depth <- with(pasecore, interaction(Site, Depth))
-pase.bd.mod <- lm(BulkDens ~ site.depth, data = pasecore)
-bd.out <- HSD.test(pase.bd.mod , "site.depth", group = TRUE, alpha = 0.05)
-print(bd.out)
+pase.bd.site <- aov(BulkDens ~ Site, data = pasecore)
+summary(pase.bd.site)
+TukeyHSD(pase.bd.site)
 
-# Site Letters. Use this for when there is one factor
-model <- lm(BulkDens ~ Site, data = pasecore)
-bd.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
-print(bd.site)
+pase.bd.depth <- aov(BulkDens ~ Depth, data = pasecore)
+summary(pase.bd.depth)
+TukeyHSD(pase.bd.depth)
+
+
+# Depth letters
+model <- lm(BulkDens ~ Depth, data = pasecore)
+bd.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(bd.depth)
+
 
 ```
 
@@ -453,19 +456,26 @@ pasecore <- cbind(pasecore, rank.organicp)
 
 # model
 pase.organicp.aov <- lm(rank.organicp ~ Site + Depth + Site:Depth, data = pasecore)
-summary(pase.organicp.aov)
-anova(pase.organicp.aov)
+anova(pase.organicp.aov) # no interaction analyze separately
 
-# Site and Depth Letters
-site.depth <- with(pasecore, interaction(Site, Depth))
-pase.organicp.mod <- lm(rank.organicp ~ site.depth, data = pasecore)
-organicp.out <- HSD.test(pase.organicp.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(organicp.out)
+organicp.site <- aov(rank.organicp ~ Site, data = pasecore)
+summary(organicp.site)
+TukeyHSD(organicp.site)
 
-# Site Letters. Use this for when there is one factor
+
+organicp.depth <- aov(rank.organicp ~ Depth, data = pasecore)
+summary(organicp.depth)
+TukeyHSD(organicp.depth)
+
+# Site Letters. 
 model <- lm(rank.organicp ~ Site, data = pasecore)
 organicp.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(organicp.site)
+
+# Depth letters
+model <- lm(rank.organicp ~ Depth, data = pasecore)
+organicp.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(organicp.depth) # no difference in depth
 ```
 
 ```{r Resin P Summary}
@@ -529,14 +539,13 @@ pasecore <- cbind(pasecore, rank.resinp)
 
 # model
 resinp.aov <- lm(rank.resinp ~ Site + Depth + Site:Depth, data = pasecore)
-summary(resinp.aov)
-anova(resinp.aov)
+anova(resinp.aov) # significant interaction 
 
 # Site and Depth Letters
 site.depth <- with(pasecore, interaction(Site, Depth))
 resinp.mod <- lm(rank.resinp ~ site.depth, data = pasecore)
 resinp.out <- HSD.test(resinp.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(resinp.out)
+print(resinp.out) # color code this
 
 # Site Letters. Use this for when there is one factor
 model <- lm(rank.resinp ~ Site, data = pasecore)
@@ -602,14 +611,7 @@ pasecore <- cbind(pasecore, rank.coarse)
 
 # model
 coarse.aov <- lm(rank.coarse ~ Site + Depth + Site:Depth, data = pasecore)
-summary(coarse.aov)
 anova(coarse.aov)
-
-# Site and Depth Letters
-site.depth <- with(pasecore, interaction(Site, Depth))
-coarse.mod <- lm(rank.coarse ~ site.depth, data = pasecore)
-coarse.out <- HSD.test(coarse.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(coarse.out)
 
 # Site Letters. Use this for when there is one factor
 model <- lm(rank.coarse ~ Site, data = pasecore)
@@ -675,19 +677,20 @@ pasecore <- cbind(pasecore, rank.fine)
 
 # model
 fineroot.aov <- lm(rank.fine ~ Site + Depth + Site:Depth, data = pasecore)
-summary(fineroot.aov)
-anova(fineroot.aov)
+anova(fineroot.aov) # no interaction, analyze separately
 
-# Site and Depth Letters
-site.depth <- with(pasecore, interaction(Site, Depth))
-fineroot.mod <- lm(rank.fine ~ site.depth, data = pasecore)
-fineroot.out <- HSD.test(fineroot.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(fineroot.out)
+# site
+fineroot.site <- aov(rank.fine ~ Site, data = pasecore)
+anova(fineroot.site) # not significant
 
-# Site Letters. Use this for when there is one factor
-model <- lm(rank.fine ~ Site, data = pasecore)
-fineroot.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
-print(fineroot.site)
+# depth
+fineroot.depth <- aov(rank.fine ~ Depth, data = pasecore)
+anova(fineroot.depth) # not significant
+
+# letters
+model <- lm(rank.fine ~ Depth, data = pasecore)
+fineroot.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(fineroot.depth)
 ```
 
 ```{r Texture Summary}
@@ -720,6 +723,8 @@ pase.text.sum.melt2 <- melt(pase.text.sum2, id = c("Site"))
 
 ggplot(pase.text.sum.melt2, aes(x = Site, y = value, fill = variable)) +
   geom_bar(stat = "identity") + mytheme + theme(axis.title = element_blank())
+
+# pattern holds across depths
 ```
 
 ```{r Root P Summary}
@@ -774,22 +779,30 @@ ggplot(data = percentp.sum2, aes(x = Site, y = mean)) +
 
 # model
 rootp.aov <- lm(PercentP ~ Site + Depth + Site:Depth, data = pasecore)
-summary(rootp.aov)
-anova(fineroot.aov)
+anova(fineroot.aov) # no interaction term, depth appears most significant
 
-# Site and Depth Letters
-site.depth <- with(pasecore, interaction(Site, Depth))
-percentp.mod <- lm(PercentP ~ site.depth, data = pasecore)
-percentp.out <- HSD.test(percentp.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(percentp.out)
+# site
+rootp.site <- aov(PercentP ~ Site, data = pasecore)
+anova(rootp.site)
+TukeyHSD(rootp.site)
 
-# Site Letters. Use this for when there is one factor
+# depth
+rootp.depth <- aov(PercentP ~ Depth, data = pasecore)
+anova(rootp.depth)
+TukeyHSD(rootp.depth)
+
+# Use this for when there is one factor
 model <- lm(PercentP ~ Site, data = pasecore)
 percentp.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(percentp.site)
+
+# Use this for when there is one factor
+model2 <- lm(PercentP ~ Depth, data = pasecore)
+percentp.Depth <- HSD.test(model2, "Depth", group = TRUE, alpha = 0.05)
+print(percentp.Depth)
 ```
 
-### Soil Pase Core
+### Soil Pase 
 ```{r Soil Pase g Summary}
 
 # boxplot
@@ -847,8 +860,7 @@ pasecore <- cbind(pasecore, rank.soilpase.g)
 
 # model
 soilpase.aov <- lm(rank.soilpase.g ~ Site + Depth + Site:Depth, data = pasecore)
-summary(soilpase.aov)
-anova(soilpase.aov)
+anova(soilpase.aov) # significant interaction term
 
 # Site and Depth Letters
 site.depth <- with(pasecore, interaction(Site, Depth))
@@ -919,7 +931,6 @@ pasecore <- cbind(pasecore, rank.soilpase.vol)
 
 # model
 soilpase.aov <- lm(rank.soilpase.vol ~ Site + Depth + Site:Depth, data = pasecore)
-summary(soilpase.aov)
 anova(soilpase.aov)
 
 # Site and Depth Letters
@@ -1005,9 +1016,10 @@ ls8 <- lm(CoarseRootDensity ~ Total_OrgP, data = pasecore)
 coef(ls8) # no need to center it because positive intercept
 summary(ls8) # eq: y = 2.690 - 6.488x; p = 0.360; r2 = 0.013
 
-# Total Organic P x Fine Root - significant
+# Total Organic P x Fine Root
 ggplot(data = pasecore, aes(x = Total_OrgP, y = FineRootDensity)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_y_continuous(limits = c(0, 1.5))
 
 ls9 <- lm(FineRootDensity ~ Total_OrgP, data = pasecore)
 coef(ls9) # no need to center it because positive intercept
@@ -1053,6 +1065,15 @@ ggplot(data = pasecore, aes(x = FineRootDensity, y = PercentP)) + geom_point() +
   geom_smooth(method = "lm", colour = "black") + mytheme 
 # definitely not significant. no point doing lm
 
+# Fine Root x Organic P
+ggplot(data = pasecore, aes(x = FineRootDensity, y = Total_OrgP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 1.25))
+
+ls9 <- lm(Total_OrgP ~ FineRootDensity, data = pasecore)
+coef(ls9) # no need to center it because positive intercept
+summary(ls9) # eq: y = 0.354 - 0.963x; p = 0.189; r2 = 0.026
+
 ```
 
 ```{r Soil Pase Correlations}
@@ -1088,8 +1109,9 @@ coef(ls14b) # no need to center it because positive intercept
 summary(ls14b) # eq: y = 1.826 + 9.321x; p < 0.05; r2 = 0.158
 
 # Resin P x Soil Pase
-ggplot(data = pasecore, aes(x = ResinP, y = SoilPase_g)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme 
+ggplot(data = pasecore, aes(x = SoilPase_g, y = ResinP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme + 
+  scale_x_continuous(limits = c(0, 10))
 
 ls15 <- lm(SoilPase_g ~ ResinP, data = pasecore)
 coef(ls15) # no need to center it because positive intercept
@@ -1105,18 +1127,35 @@ summary(ls15b) # eq: y = 3.037 + 0.038x; p = 0.500; r2 = 0.007
 
 # Fine Root x Soil Pase - significant
 ggplot(data = pasecore, aes(x = FineRootDensity, y = SoilPase_g)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme 
+  geom_smooth(method = "lm", colour = "black") + mytheme  +
+  scale_x_continuous(limits = c(0, 1.2))
 
 ls16 <- lm(SoilPase_g ~ FineRootDensity, data = pasecore)
 coef(ls16) # no need to center it because positive intercept
 summary(ls16) # eq: y = 2.871 + 3.449x; p < 0.05; r2 = 0.247
 
 ggplot(data = pasecore, aes(x = FineRootDensity, y = SoilPase_vol)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 1.2))
 
 ls16b <- lm(SoilPase_vol ~ FineRootDensity, data = pasecore)
 coef(ls16b) # no need to center it because positive intercept
 summary(ls16b) # eq: y = 2.396 + 1.695x; p < 0.05; r2 = 0.181
+
+# Soil Pase x Percent P  - significant
+ggplot(data = pasecore, aes(x = SoilPase_g, y = PercentP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
+
+ls35 <- lm(PercentP ~ SoilPase_g, data = pasecore)
+coef(ls35) # no need to center it because positive intercept
+summary(ls35) # eq: y = 0.041 + 0.002x; p < 0.05; r2 = 0.183
+
+ggplot(data = pasecore, aes(x = SoilPase_vol, y = PercentP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme 
+
+ls35b <- lm(PercentP ~ SoilPase_vol, data = pasecore)
+coef(ls35b) # no need to center it because positive intercept
+summary(ls35b) # eq: y = 0.041 + 0.003x; p = 0.500; r2 = 0.121
 ```
 
 # Paired Phosphatase Core
@@ -1169,19 +1208,24 @@ shortcore <- cbind(shortcore, paired.rank.coarse)
 
 # model
 coarse.aov <- lm(paired.rank.coarse ~ Site + Depth + Site:Depth, data = shortcore)
-summary(coarse.aov)
-anova(coarse.aov)
+anova(coarse.aov) # no interaction, test separately 
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-coarse.mod <- lm(paired.rank.coarse ~ site.depth, data = pasecore)
-coarse.out <- HSD.test(coarse.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(coarse.out)
+paired.coarse.site <- aov(paired.rank.coarse ~ Site, data = shortcore)
+anova(paired.coarse.site) # site significant
 
-# Site Letters. Use this for when there is one factor
+# site Letters
 model <- lm(paired.rank.coarse ~ Site, data = shortcore)
 coarse.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(coarse.site)
+
+paired.coarse.depth <- aov(paired.rank.coarse ~ Depth, data = shortcore)
+anova(paired.coarse.depth) # depth is very significant, moreso than site
+
+# depth letters
+model <- lm(paired.rank.coarse ~ Depth, data = shortcore)
+coarse.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(coarse.depth)
+
 ```
 
 ```{r Fine Root Density}
@@ -1231,19 +1275,18 @@ shortcore <- cbind(shortcore, paired.rank.fineroot)
 
 # model
 fineroot.aov <- lm(paired.rank.fineroot ~ Site + Depth + Site:Depth, data = shortcore)
-summary(fineroot.aov)
-anova(fineroot.aov)
+anova(fineroot.aov) # no interaction, analyze separately
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-fineroot.mod <- lm(paired.rank.fineroot ~ site.depth, data = shortcore)
-fineroot.out <- HSD.test(fineroot.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(fineroot.out)
+paired.fineroot.site <- aov(paired.rank.fineroot ~ Site, data = shortcore)
+anova(paired.fineroot.site) # site not significant
 
-# Site Letters. Use this for when there is one factor
-model <- lm(paired.rank.fineroot~ Site, data = shortcore)
-fineroot.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
-print(fineroot.site)
+paired.fineroot.depth <- aov(paired.rank.fineroot ~ Depth, data = shortcore)
+anova(paired.fineroot.depth) # depth is very significant, moreso than site
+
+# depth letters
+model <- lm(paired.rank.fineroot ~ Depth, data = shortcore)
+fineroot.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(fineroot.depth)
 ```
 
 ```{r Root Surface Area}
@@ -1290,19 +1333,26 @@ ggplot(data = paired.rootsa.sum2, aes(x = Site, y = mean)) +
 
 # model
 rootsa.aov <- lm(RootSurfaceArea ~ Site + Depth + Site:Depth, data = shortcore)
-summary(rootsa.aov)
-anova(rootsa.aov)
+anova(rootsa.aov) # analyze separately no interaction terms
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-rootsa.mod <- lm(RootSurfaceArea ~ site.depth, data = shortcore)
-rootsa.out <- HSD.test(rootsa.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(rootsa.out)
+# site
+paired.rootsa.site <- aov(RootSurfaceArea ~ Site, data = shortcore)
+anova(paired.rootsa.site) # site significant
 
 # Site Letters. Use this for when there is one factor
 model <- lm(RootSurfaceArea ~ Site, data = shortcore)
 rootsa.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(rootsa.site)
+
+# depth
+paired.rootsa.depth <- aov(RootSurfaceArea ~ Depth, data = shortcore)
+anova(paired.rootsa.depth) # site is more significant than depth in determining surface area...perhaps phosphatase is the same?
+
+# depth letters
+model <- lm(RootSurfaceArea ~ Depth, data = shortcore)
+rootsa.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(rootsa.depth)
+
 ```
 
 ```{r Resin P Paired}
@@ -1351,16 +1401,9 @@ shortcore <- cbind(shortcore, paired.rank.resinp)
 
 # model
 resinp.aov <- lm(paired.rank.resinp ~ Site + Depth + Site:Depth, data = shortcore)
-summary(resinp.aov)
-anova(resinp.aov)
+anova(resinp.aov) # only site significant like root surface
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-resinp.mod <- lm(paired.rank.resinp ~ site.depth, data = shortcore)
-resinp.out <- HSD.test(resinp.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(resinp.out)
-
-# Site Letters. Use this for when there is one factor
+# Site Letters
 model <- lm(paired.rank.resinp ~ Site, data = shortcore)
 resinp.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(resinp.site)
@@ -1412,16 +1455,13 @@ shortcore <- cbind(shortcore, paired.rank.orgp)
 
 # model
 orgp.aov <- lm(paired.rank.orgp ~ Site + Depth + Site:Depth, data = shortcore)
-summary(orgp.aov)
-anova(orgp.aov)
+anova(orgp.aov) # interaction not significant, analyze separately
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-orgp.mod <- lm(paired.rank.orgp ~ site.depth, data = shortcore)
-orgp.out <- HSD.test(orgp.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(orgp.out)
+# site
+orgp.site <- aov(paired.rank.orgp ~ Site, data = shortcore)
+anova(orgp.site) # very significant 
 
-# Site Letters. Use this for when there is one factor
+# site letters
 model <- lm(paired.rank.orgp ~ Site, data = shortcore)
 orgp.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(orgp.site)
@@ -1473,14 +1513,7 @@ shortcore <- cbind(shortcore, paired.rank.rootpase)
 
 # model
 rootpase.aov <- lm(paired.rank.rootpase ~ Site + Depth + Site:Depth, data = shortcore)
-summary(rootpase.aov)
-anova(rootpase.aov)
-
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-rootpase.mod <- lm(paired.rank.rootpase ~ site.depth, data = shortcore)
-rootpase.out <- HSD.test(rootpase.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(rootpase.out)
+anova(rootpase.aov) # only site is significant
 
 # Site Letters. Use this for when there is one factor
 model <- lm(paired.rank.rootpase ~ Site, data = shortcore)
@@ -1534,14 +1567,11 @@ shortcore <- cbind(shortcore, paired.rank.rootpase.vol)
 
 # model
 rootpase.aov <- lm(paired.rank.rootpase.vol ~ Site + Depth + Site:Depth, data = shortcore)
-summary(rootpase.aov)
-anova(rootpase.aov)
+anova(rootpase.aov) # not significant interaction (p > 0.05). analyze separately
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-rootpase.mod <- lm(paired.rank.rootpase ~ site.depth, data = shortcore)
-rootpase.out <- HSD.test(rootpase.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(rootpase.out)
+# site
+rootpase.site <- lm(paired.rank.rootpase.vol ~ Site, data = shortcore)
+anova(rootpase.site)
 
 # Site Letters. Use this for when there is one factor
 model <- lm(paired.rank.rootpase.vol ~ Site, data = shortcore)
@@ -1593,16 +1623,9 @@ ggplot(data = paired.soilpase.sum2, aes(x = Site, y = mean)) +
 
 # model
 soilpase.aov <- lm(SoilPase_g ~ Site + Depth + Site:Depth, data = shortcore)
-summary(soilpase.aov)
-anova(soilpase.aov)
+anova(soilpase.aov) # only site is significant
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-soilpase.mod <- lm(SoilPase_g ~ site.depth, data = shortcore)
-soilpase.out <- HSD.test(soilpase.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(soilpase.out)
-
-# Site Letters. Use this for when there is one factor
+# Site Letters 
 model <- lm(SoilPase_g ~ Site, data = shortcore)
 soilpase.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(soilpase.site)
@@ -1655,20 +1678,146 @@ shortcore <- cbind(shortcore, paired.rank.soilpase.vol)
 
 # model
 soilpase.aov <- lm(paired.rank.soilpase.vol ~ Site + Depth + Site:Depth, data = shortcore)
-summary(soilpase.aov)
-anova(soilpase.aov)
+anova(soilpase.aov) # only site is significant
 
-# Site and Depth Letters
-site.depth <- with(shortcore, interaction(Site, Depth))
-soilpase.mod <- lm(paired.rank.soilpase.vol ~ site.depth, data = shortcore)
-soilpase.out <- HSD.test(soilpase.mod, "site.depth", group = TRUE, alpha = 0.05)
-print(soilpase.out)
-
-# Site Letters. Use this for when there is one factor
+# site
 model <- lm(paired.rank.soilpase.vol ~ Site, data = shortcore)
 soilpase.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
 print(soilpase.site)
 ```
+
+```{r Paired Percent P}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = PercentP)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Root~'%'~P))
+
+# mean, sd, se: site x depth
+paired.percentp.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(PercentP, na.rm = TRUE),
+            sd = sd(PercentP, na.rm = TRUE),
+            se = ((sd(PercentP, na.rm = TRUE))/sqrt(n())))
+
+paired.percentp.sum$Depth = factor(paired.percentp.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.percentp.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Root~'%'~P))
+
+# mean, sd, se: site 
+paired.percentp.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(PercentP, na.rm = TRUE),
+            sd = sd(PercentP, na.rm = TRUE),
+            se = ((sd(PercentP, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.percentp.sum2, aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Root~'%'~P)) +
+  theme(axis.title.x = element_blank())
+
+```
+```{r Paired Percent P ANOVA}
+# model
+percentp.aov <- lm(PercentP ~ Site + Depth + Site:Depth, data = shortcore)
+anova(percentp.aov) # no interaction term. analyze separately
+
+# site
+percentp.site <- aov(PercentP ~ Site, data = shortcore)
+anova(percentp.site)
+
+model <- lm(PercentP ~ Site, data = shortcore)
+percentp.site <- HSD.test(model, "Site", group = TRUE, alpha = 0.05)
+print(percentp.site)
+
+# depth
+percentp.depth <- aov(PercentP ~ Depth, data = shortcore)
+anova(percentp.depth) # site is more significnat than depth
+
+model <- lm(PercentP ~ Depth, data = shortcore)
+percentp.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(percentp.depth)
+```
+
+```{r Paired Bulk Density}
+# boxplot
+shortcore$Depth = factor(shortcore$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = shortcore, aes(x = Depth, y = BulkDensity)) + geom_boxplot() + facet_grid(.~Site) + mytheme +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Bulk~Density))
+
+# mean, sd, se: site x depth
+paired.bulkdens.sum <- shortcore %>%
+  dplyr::group_by(Site, Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(BulkDensity, na.rm = TRUE),
+            sd = sd(BulkDensity, na.rm = TRUE),
+            se = ((sd(BulkDensity, na.rm = TRUE))/sqrt(n())))
+
+paired.bulkdens.sumDepth = factor(paired.bulkdens.sum$Depth, levels = c('0-10', '10-20', '20-30'))
+ggplot(data = paired.bulkdens.sum, aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  facet_grid(.~Site) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
+  ylab(expression(Mean~Bulk~Density))
+
+# mean, sd, se: site 
+paired.bulkdens.sum2 <- shortcore %>%
+  dplyr::group_by(Site) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(BulkDensity, na.rm = TRUE),
+            sd = sd(BulkDensity, na.rm = TRUE),
+            se = ((sd(BulkDensity, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.bulkdens.sum2 , aes(x = Site, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Bulk~Density)) +
+  theme(axis.title.x = element_blank())
+
+# mean, sd, se: site - depth
+paired.bulkdens.sum3 <- shortcore %>%
+  dplyr::group_by(Depth) %>%
+  dplyr::summarise(n = n(),
+            mean = mean(BulkDensity, na.rm = TRUE),
+            sd = sd(BulkDensity, na.rm = TRUE),
+            se = ((sd(BulkDensity, na.rm = TRUE))/sqrt(n())))
+
+ggplot(data = paired.bulkdens.sum3 , aes(x = Depth, y = mean)) + 
+  geom_bar(stat = "identity", colour = "black", position = position_dodge(0.5)) +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), position = position_dodge(0.5), width = 0.2) +
+  mytheme + 
+  ylab(expression(Mean~Bulk~Density)) +
+  theme(axis.title.x = element_blank())
+
+
+```
+```{r Paired BD ANOVA}
+
+# normal
+
+bulkdens.aov <- lm(BulkDensity ~ Site + Depth + Site:Depth, data = shortcore)
+anova(bulkdens.aov) # only depth is significant
+
+# depth
+bulkdens.depth <- aov(BulkDensity ~ Depth, data = shortcore)
+anova(bulkdens.depth) 
+
+model <- lm(BulkDensity ~ Depth, data = shortcore)
+bulkdens.depth <- HSD.test(model, "Depth", group = TRUE, alpha = 0.05)
+print(bulkdens.depth)
+```
+
 
 ## Paired MANOVA
 ```{r}
@@ -1720,7 +1869,8 @@ summary(ls17) # eq: y = 0.051 + 0.102x; p < 0.05; r2 = 0.715
 
 # Root surface area - significant
 ggplot(data = shortcore, aes(x = RootSurfaceArea, y = RootPase_vol)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme # not great
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 50))
 
 ggplot(data = shortcore, aes(x = RootSurfaceArea, y = RootPase_groot)) + geom_point() + 
   geom_smooth(method = "lm", colour = "black") + mytheme
@@ -1731,26 +1881,49 @@ summary(ls18) # eq: y = 27.793 + 0.896x; p < 0.05; r2 = 0.202
 
 # Root pase x Percent P
 ggplot(data = shortcore, aes(x = RootPase_vol, y = PercentP)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 0.1))
 
 ls19 <- lm(PercentP ~ RootPase_vol, data = shortcore)
 coef(ls19) 
 summary(ls19) # eq: y = 0.053 - 0.047x; p = 0.218; r2 = 0.047
 
 ggplot(data = shortcore, aes(x = RootPase_groot, y = PercentP)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 100))
 
+ls19b <- lm(PercentP ~ RootPase_groot, data = shortcore)
+coef(ls19b) 
+summary(ls19b) # eq: y = 0.058 - 0.0001x; p = 0.124; r2 = 0.072
+
+# root phosphatase x soil phosphatase
+ggplot(data = shortcore, aes(x = RootPase_vol, y = SoilPase_vol)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 0.15))
+
+ls39 <- lm(SoilPase_vol ~ RootPase_vol, data = shortcore)
+coef(ls39) 
+summary(ls39) # eq: y = 3.341 + 4.786x; p = 0.306; r2 = 0.034
+
+ggplot(data = shortcore, aes(x = RootPase_groot, y = SoilPase_g)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 100))
+
+ls39b <- lm(SoilPase_vol ~ RootPase_vol, data = shortcore)
+coef(ls39b) 
+summary(ls39b) # eq: y = 3.341 + 4.786x; p = 0.306; r2 = 0.034
 ```
 
 ```{r Soil Variables}
 
 # ResinP x Root Pase ; is resin P by vol or by g? bc will use matching pase
-ggplot(data = shortcore, aes(x = ResinP, y = RootPase_vol)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme
+ggplot(data = shortcore, aes(x = RootPase_vol, y = ResinP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 0.15))
 
-ls20 <- lm(RootPase_vol ~ ResinP, data = shortcore)
+ls20 <- lm(ResinP ~ RootPase_vol, data = shortcore)
 coef(ls20) 
-summary(ls20) # eq: y = 0.078 - 0.004x; p = 0.207; r2 = 0.071
+summary(ls20) # eq: y = 6.046 - 11.363x; p = 0.207; r2 = 0.051
 
 ggplot(data = shortcore, aes(x = ResinP, y =  RootPase_groot)) + geom_point() + 
   geom_smooth(method = "lm", colour = "black") + mytheme
@@ -1761,7 +1934,8 @@ summary(ls20b) # eq: y = 67.117 - 1.917x; p = 0.253; r2 = 0.042
 
 # Total_OrgP x Root Pase ; # is organic P by vol or by g?
 ggplot(data = shortcore, aes(x = Total_OrgP, y = RootPase_vol)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_y_continuous(limits = c(0, 0.15)) # don't see pattern until remove outliers
 
 ls21 <- lm(RootPase_vol ~Total_OrgP, data = shortcore)
 coef(ls21) 
@@ -1770,7 +1944,7 @@ summary(ls21) # eq: y = 0.076 - 0.146x; p = 0.346; r2 = 0.030
 ggplot(data = shortcore, aes(x = Total_OrgP, y =  RootPase_groot)) + geom_point() + 
   geom_smooth(method = "lm", colour = "black") + mytheme
 
-# Bulk density x Root pase - significant
+# Bulk density x Root pase
 ggplot(data = shortcore, aes(x = BulkDensity, y = RootPase_vol)) + geom_point()+ 
   geom_smooth(method = "lm", colour = "black") + mytheme
 
@@ -1785,7 +1959,6 @@ ggplot(data = shortcore, aes(x = RootPase_vol, y =  SoilPase_vol)) + geom_point(
 
 ```
 
-
 ## Soil Phosphatase Correlations
 ```{r Soil Pase x Root Variables}
 
@@ -1795,23 +1968,35 @@ ggplot(data = shortcore, aes(x = CoarseRootDensity, y = SoilPase_vol)) + geom_po
 
 # Fine root x SoilPase  
 ggplot(data = shortcore, aes(x = FineRootDensity, y = SoilPase_vol)) + geom_point() + 
-  geom_smooth(method = "lm", colour = "black") + mytheme
+  geom_smooth(method = "lm", colour = "black") + mytheme 
 
-ls23<- lm(SoilPase_vol ~ FineRootDensity, data = shortcore)
+ls23 <- lm(SoilPase_vol ~ FineRootDensity, data = shortcore)
 coef(ls23) 
 summary(ls23) # eq: y = 3.269 + 0.359x; p = 0.524; r2 = 0.0128
 
 # Root surface area - significant
-ggplot(data = shortcore, aes(x = RootSurfaceArea, y = SoilPase_vol)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = RootSurfaceArea, y = SoilPase_vol)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
+
+ls24 <- lm(SoilPase_vol ~ RootSurfaceArea, data = shortcore)
+coef(ls24) 
+summary(ls24) # eq: y = 2.305 + 0.0417x; p = 0.08; r2 = 0.101 # by g is better than by volume
+
 ggplot(data = shortcore, aes(x = RootSurfaceArea, y = SoilPase_g)) + geom_point() + 
   geom_smooth(method = "lm", colour = "black") + mytheme
 
-ls24 <- lm(SoilPase_g ~ RootSurfaceArea, data = shortcore)
-coef(ls24) 
-summary(ls24) # eq: y = 2.468 + 0.076x; p < 0.05; r2 = 0.225 # better
+ls24b <- lm(SoilPase_g ~ RootSurfaceArea, data = shortcore)
+coef(ls24b) 
+summary(ls24b) # eq: y = 2.468 + 0.076x; p < 0.05; r2 = 0.225 
 
 # Soil pase x Percent P
-ggplot(data = shortcore, aes(x = SoilPase_vol, y = PercentP)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = SoilPase_vol, y = PercentP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
+
+ls25b <- lm(PercentP ~ SoilPase_vol, data = shortcore)
+coef(ls25b) 
+summary(ls25b) # eq: y = 0.052 - 0.0003 x; p = 0.834; r2 = 0.001 
+
 ggplot(data = shortcore, aes(x = SoilPase_g, y = PercentP)) + geom_point() + 
   geom_smooth(method = "lm", colour = "black") + mytheme
 
@@ -1824,13 +2009,34 @@ summary(ls25) # eq: y = 0.047 + 0.0008 x; p = 0.472; r2 = 0.016 # better
 
 # ResinP x Soil Pase
 # is resin P by vol or by g? bc will use matching pase
-ggplot(data = shortcore, aes(x = ResinP, y = SoilPase_vol)) + geom_point() + mytheme 
+ggplot(data = shortcore, aes(x = SoilPase_vol, y = ResinP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_y_continuous(limits = c(0, 10))
+
+ls40 <- lm(ResinP ~ SoilPase_vol, data = shortcore)
+coef(ls40) 
+summary(ls40) # eq: y = 6.027 -0.153x; p = 0.658; r2 = 0.0062 
+
+
 ggplot(data = shortcore, aes(x = ResinP, y =  SoilPase_g)) + geom_point() + mytheme
 
 # Total_OrgP x Soil Pase 
 # is organic P by vol or by g?
-ggplot(data = shortcore, aes(x = Total_OrgP, y = SoilPase_vol)) + geom_point() + mytheme 
-ggplot(data = shortcore, aes(x = Total_OrgP, y =  SoilPase_g)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = Total_OrgP, y = SoilPase_vol)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 0.3))
+
+ls41b <- lm(SoilPase_vol ~ Total_OrgP, data = shortcore)
+coef(ls41b) 
+summary(ls41b) # eq: y = 3.865 - 2.073x; p = 0.605; r2 = 0.009
+
+ggplot(data = shortcore, aes(x = Total_OrgP, y =  SoilPase_g)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
+
+ls41 <- lm(SoilPase_g ~ Total_OrgP, data = shortcore)
+coef(ls41) 
+summary(ls41) # eq: y = 4.597 + 1.285x; p = 0.794; r2 = 0.002
+
 
 # Bulk density x Soil pase 
 ggplot(data = shortcore, aes(x = BulkDensity, y = SoilPase_vol)) + geom_point() + 
@@ -1840,7 +2046,8 @@ ls26 <- lm(SoilPase_vol ~ BulkDensity, data = shortcore)
 coef(ls26) 
 summary(ls26) # eq: y = 0.539 + 3.955x; p < 0.05; r2 = 0.132 # better
 
-ggplot(data = shortcore, aes(x = BulkDensity, y =  SoilPase_g)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = BulkDensity, y =  SoilPase_g)) + geom_point()  + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
 
 ```
 ## Correlations
@@ -1863,7 +2070,12 @@ coef(ls28)
 summary(ls28) # eq: y = 48.131 - 23.884x; p = 0.09; r2 = 0.090 # better
 
 # bulk density x resin p
-ggplot(data = shortcore, aes(x = BulkDensity, y = ResinP)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = BulkDensity, y = ResinP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
+
+ls42 <- lm(ResinP ~ BulkDensity, data = shortcore)
+coef(ls42) 
+summary(ls42) # y = 8.344 - 3.708; p = 0.301, r2 = 0.033
 
 # bulk density x total organic P
 ggplot(data = shortcore, aes(x = BulkDensity, y = Total_OrgP)) + geom_point() + 
@@ -1874,13 +2086,25 @@ coef(ls29)
 summary(ls29) # eq: y = 0.267 - 0.147x; p = 0.08; r2 = 0.098 
 
 # bulk density x percentP
-ggplot(data = shortcore, aes(x = BulkDensity, y = PercentP)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = BulkDensity, y = PercentP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme
+
+ls43 <- lm(PercentP ~ BulkDensity, data = shortcore)
+coef(ls43) 
+summary(ls43) # eq: y = 0.074 - 0.030x; p < 0.05 ; r2 = 0.122
 ```
 
 ```{r Fine Root Correlations}
 
 # Fine root x resin P
-ggplot(data = shortcore, aes(x = FineRootDensity, y = ResinP)) + geom_point() + mytheme
+ggplot(data = shortcore, aes(x = FineRootDensity, y = ResinP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 1.0))
+
+ls36 <- lm(ResinP ~ FineRootDensity, data = shortcore)
+coef(ls36) 
+summary(ls36) # eq: y = 5.955 - 0.555x; p = 0.607; r2 = 0.008
+
 
 # fine root x root surface area - significant
 ggplot(data = shortcore, aes(x = FineRootDensity, y = RootSurfaceArea)) + geom_point() + 
@@ -1898,13 +2122,22 @@ ls31 <- lm(Total_OrgP ~ FineRootDensity, data = shortcore)
 coef(ls31) 
 summary(ls31) # eq: y = 0.149 + 0.012x; p = 0.647; r2 = 0.007
 
-# fine root x percentP - significant 
+# fine root x percentP 
 ggplot(data = shortcore, aes(x = FineRootDensity, y = PercentP)) + geom_point() + 
   geom_smooth(method = "lm", colour = "black") + mytheme
 
 ls32 <- lm(PercentP ~ FineRootDensity, data = shortcore)
 coef(ls32) 
 summary(ls32) # eq: y = 0.050 + 0.002x; p = 0.679; r2 = 0.005
+
+# root surface area x resin p
+ggplot(data = shortcore, aes(x = RootSurfaceArea, y = ResinP)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0, 50))
+
+ls37 <- lm(ResinP ~ RootSurfaceArea, data = shortcore)
+coef(ls37) 
+summary(ls37) # y = 4.256 + 0.038x; p = 0.416; r2 = 0.022
 ```
 
 ```{r Total Organic P Correlations}
@@ -1917,8 +2150,14 @@ ls33 <- lm(ResinP ~ Total_OrgP, data = shortcore)
 coef(ls33) 
 summary(ls33) # eq: y = 0.698 + 31.483x; p < 0.05; r2 = 0.423
 
-# organic p  x root surface area - significant
-ggplot(data = shortcore, aes(x = Total_OrgP, y = RootSurfaceArea)) + geom_point() + mytheme
+# organic p  x root surface area
+ggplot(data = shortcore, aes(x = Total_OrgP, y = RootSurfaceArea)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_x_continuous(limits = c(0.05, 0.25))
+
+ls38 <- lm(RootSurfaceArea ~ Total_OrgP, data = shortcore)
+coef(ls38) 
+summary(ls38) # eq: y = 28.279 + 15.311x; p = 0.616; r2 = 0.009
 
 #  organic p  x percentP - significant 
 ggplot(data = shortcore, aes(x = Total_OrgP, y = PercentP)) + geom_point() + 
@@ -1927,8 +2166,13 @@ ggplot(data = shortcore, aes(x = Total_OrgP, y = PercentP)) + geom_point() +
 ls34 <- lm(PercentP ~ Total_OrgP, data = shortcore)
 coef(ls34) 
 summary(ls34) # eq: y = 0.026 + 0.154x; p < 0.05; r2 = 0.727
+
+# organic p x fine root density 
+ggplot(data = shortcore, aes(x = Total_OrgP, y = FineRootDensity)) + geom_point() + 
+  geom_smooth(method = "lm", colour = "black") + mytheme +
+  scale_y_continuous(limits = c(0, 1.5))
+
+ls37 <- lm(FineRootDensity ~ Total_OrgP, data = shortcore)
+coef(ls37) 
+summary(ls37) # eq: y = 0.639 + 0.590x; p = 0.647; r2 = 0.007
 ```
-
-
-
-
